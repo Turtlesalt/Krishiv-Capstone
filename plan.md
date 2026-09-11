@@ -25,4 +25,18 @@ Self-aware limits: agent recognizes when it can't resolve a plan and escalates t
 Layered on top once the negotiation core works: subgroup clustering by shared interests, location suggestions via Maps/Places, and a lightweight DB tracking past plans so it doesn't repeat the same activity/group combo too often
 
 USE OF AGENT
-AI can be used to understand peoples moods, repeating interests, completed activities, and undertanding submlinal feelings
+I am aiming for a high level of AI involvement because the core value of the project depends on the agent making decisions rather than simply executing fixed rules.
+
+The AI agent will:
+- Interpret group preferences and constraints
+- Decide which information it needs to gather
+- Negotiate between conflicting preferences
+- Re-evaluate plans based on people's responses
+- Decide when to propose an alternative or escalate the decision to the group
+
+The non-AI components will handle:
+- Calendar API access
+- Weather API access
+- Messaging
+- Data storage
+- Authentication
