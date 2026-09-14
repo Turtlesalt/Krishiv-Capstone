@@ -1,11 +1,30 @@
-## 2026-09-11 15:25:13
-- **Message:** checking if build log is working
-- **Author:** Krishiv Vijayakumar
-- **Files changed:**
-  - BUILD_LOG.md
+# Build Log
 
-## 2026-09-11 15:26:01
-- **Message:** checking if build log is working
+## Commit: Add capstone plan and build log
+
+- Date: 2026-09-11
+- Time spent: ~[45] minutes
+- Rough tokens used: ~[X]
+- What shipped:
+  - Defined the capstone problem
+  - Defined the target users
+  - Defined the MVP scope
+  - Defined the final goals
+  - Defined the AI involvement level
+  - Created the initial build log
+
+## Commit: Finalize capstone plan and build log
+
+- Date: 2026-09-11
+- Time spent: ~[45] minutes
+- Rough tokens used: ~[X]
+- What shipped:
+  - Refined the capstone scope
+  - Clarified the MVP and final goals
+  - Added the AI-involvement rationale
+  - Corrected the plan filename to plan.md
+  - Updated the build log## 2026-09-11 16:16:54
+- **Message:** Clean up build log with development history
 - **Author:** Krishiv Vijayakumar
 - **Files changed:**
   - BUILD_LOG.md
