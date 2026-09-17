@@ -63,8 +63,11 @@
 ## Commit: Build the hangout-planner agent, web app, and location-aware planning
 
 - Date: 2026-09-17
-- Time spent: ~[X]
-- Rough tokens used: ~[X]
+- Time spent: ~2 hours 35 minutes (16:00-18:35, per session/commit timestamps)
+- Rough tokens used: ~150,000-300,000 (Claude Code doesn't expose an exact
+  cumulative counter for a session; this is a rough order-of-magnitude
+  estimate from conversation length and tool-call volume, not a precise
+  measurement)
 - What shipped:
   - Defined the agent as `agent/agent.json` (identity, model, system prompt,
     loop/termination rules) plus one JSON manifest per tool under
@@ -99,6 +102,42 @@
 
 ## 2026-09-17 18:31:39
 - **Message:** 
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - .gitignore
+  - BUILD_LOG.md
+  - backend/.env.example
+  - backend/.gitignore
+  - backend/README.md
+  - backend/agent/__init__.py
+  - backend/agent/agent.json
+  - backend/agent/context.py
+  - backend/agent/loop.py
+  - backend/agent/skills/find_nearby_places.json
+  - backend/agent/skills/get_calendar_freebusy.json
+  - backend/agent/skills/get_member_locations.json
+  - backend/agent/skills/get_past_plans.json
+  - backend/agent/skills/get_weather.json
+  - backend/agent/skills/send_email.json
+  - backend/groups.py
+  - backend/main.py
+  - backend/requirements.txt
+  - backend/skills_impl/__init__.py
+  - backend/skills_impl/calendar_skill.py
+  - backend/skills_impl/email.py
+  - backend/skills_impl/google_oauth.py
+  - backend/skills_impl/locations.py
+  - backend/skills_impl/past_plans.py
+  - backend/skills_impl/places.py
+  - backend/skills_impl/weather.py
+  - backend/static/style.css
+  - backend/templates/base.html
+  - backend/templates/group.html
+  - backend/templates/index.html
+  - backend/templates/join.html
+
+## 2026-09-17 18:31:55
+- **Message:** Build hangout-planner agent, web app, and location-aware planning
 - **Author:** Krishiv Vijayakumar
 - **Files changed:**
   - .gitignore
