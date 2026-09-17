@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ group.name }}</h1>
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+<section>
+  <h2>Members</h2>
+  <ul class="members">
+    {% for m in group.members %}
+    <li>{{ m.name }} <span class="muted">({{ m.email }}{% if m.location %} - {{ m.location }}{% endif %})</span></li>
+    {% endfor %}
+  </ul>
+  <p>Invite friends with this link - anyone who opens it can join:</p>
+  <code class="join-link">{{ join_url }}</code>
+</section>
+
+<section>
+  <h2>Plan something</h2>
+  <form method="post" action="/groups/{{ group.id }}/plan">
+    <label>Day
+      <input type="date" name="date" required>
+    </label>
+    <label>Anything else to tell the agent? (optional)
+      <textarea name="note" rows="2" placeholder="e.g. keep it low-key, Priya's been busy with exams"></textarea>
+    </label>
+    <button type="submit">Ask the agent to plan it</button>
+  </form>
+</section>
+
+{% if runs %}
+<section>
+  <h2>Runs</h2>
+  {% for run in runs|reverse %}
+  <article class="run">
+    <p class="muted">Asked: {{ run.request }}</p>
+    <p>{{ run.response }}</p>
+    <form method="post" action="/groups/{{ group.id }}/reply" class="reply-form">
+      <input type="hidden" name="session_id" value="{{ run.session_id }}">
+      <select name="person">
+        {% for m in group.members %}<option value="{{ m.name }}">{{ m.name }}</option>{% endfor %}
+      </select>
+      <input type="text" name="message" placeholder="reply, e.g. can't make it, how about Sunday?" required>
+      <button type="submit">Send reply</button>
+    </form>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Plan hangouts with your friends</h1>
+<p>Create a group, share the join link, and let the agent coordinate calendars,
+weather, and history to propose a plan.</p>
+
+<form method="post" action="/groups">
+  <label>Group name
+    <input type="text" name="group_name" required>
+  </label>
+  <label>Your name
+    <input type="text" name="your_name" required>
+  </label>
+  <label>Your email
+    <input type="email" name="your_email" required>
+  </label>
+  <label>Your location (helps the agent recommend real nearby venues)
+    <input type="text" name="your_location" placeholder="e.g. Koramangala, Bangalore" required>
+  </label>
+  <button type="submit">Create group</button>
+</form>
+{% endblock %}

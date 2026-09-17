@@ -1,0 +1,27 @@
+{
+  "name": "find_nearby_places",
+  "description": "Search for real venues (e.g. restaurants, cafes, bowling alleys, parks) near a location, to ground a proposed activity in an actual named place instead of a vague or invented suggestion. Only call this with a location that came from get_member_locations for a real member - never guess or make up a location.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "A place, neighborhood, or city to search near, taken from get_member_locations"
+      },
+      "category": {
+        "type": "string",
+        "description": "What kind of venue to look for, e.g. 'restaurants', 'cafes', 'parks'"
+      },
+      "max_results": {
+        "type": "integer",
+        "description": "Max number of places to return",
+        "default": 5
+      }
+    },
+    "required": ["location", "category"]
+  },
+  "implementation": {
+    "module": "skills_impl.places",
+    "function": "find_nearby_places"
+  }
+}

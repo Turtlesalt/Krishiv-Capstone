@@ -1,0 +1,24 @@
+{
+  "name": "send_email",
+  "description": "Send an email to one person with a proposed plan or a status update. Use this to deliver proposals and to report back when no plan could be found.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "person": {
+        "type": "string",
+        "description": "The person's name as listed in data/people.json"
+      },
+      "subject": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      }
+    },
+    "required": ["person", "subject", "body"]
+  },
+  "implementation": {
+    "module": "skills_impl.email",
+    "function": "send_email"
+  }
+}

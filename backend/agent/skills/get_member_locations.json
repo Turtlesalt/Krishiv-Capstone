@@ -1,0 +1,13 @@
+{
+  "name": "get_member_locations",
+  "description": "Get each group member's self-reported location (city/area), to help pick a meeting spot and venue that's reasonably convenient for everyone. Members who left it blank show as 'unknown' - never invent a location for them.",
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "implementation": {
+    "module": "skills_impl.locations",
+    "function": "get_member_locations"
+  }
+}

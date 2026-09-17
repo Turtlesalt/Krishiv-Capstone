@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Join "{{ group.name }}"</h1>
+<form method="post" action="/groups/{{ group.id }}/join">
+  <label>Your name
+    <input type="text" name="name" required>
+  </label>
+  <label>Your email
+    <input type="email" name="email" required>
+  </label>
+  <label>Your location (helps the agent recommend real nearby venues)
+    <input type="text" name="location" placeholder="e.g. Koramangala, Bangalore" required>
+  </label>
+  <button type="submit">Join group</button>
+</form>
+{% endblock %}
