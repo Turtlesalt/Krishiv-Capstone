@@ -259,3 +259,10 @@ s11## 2026-09-19 17:23:20
   - BUILD_LOG.md
   - backend/.gitignore
 
+## 2026-09-19 17:40:18
+- **Message:** Remove leaked Google Places API key from .env.example
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/.env.example
+
