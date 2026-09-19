@@ -1,0 +1,26 @@
+{
+  "name": "get_calendar_freebusy",
+  "description": "Get a person's free/busy calendar blocks between two dates, to check availability for a hangout.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "person": {
+        "type": "string",
+        "description": "The person's name as listed in data/people.json"
+      },
+      "start_date": {
+        "type": "string",
+        "description": "Start date, YYYY-MM-DD"
+      },
+      "end_date": {
+        "type": "string",
+        "description": "End date, YYYY-MM-DD"
+      }
+    },
+    "required": ["person", "start_date", "end_date"]
+  },
+  "implementation": {
+    "module": "skills_impl.calendar_skill",
+    "function": "get_freebusy"
+  }
+}

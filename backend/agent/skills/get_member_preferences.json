@@ -1,0 +1,13 @@
+{
+  "name": "get_member_preferences",
+  "description": "Get each group member's self-reported interests and dislikes, to help pick an activity the group will actually enjoy. Members who left it blank show as 'none provided' - never invent a preference for them.",
+  "input_schema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "implementation": {
+    "module": "skills_impl.preferences",
+    "function": "get_member_preferences"
+  }
+}
