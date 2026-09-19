@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .env
+backend/.env
 data/groups/
 data/google_token.json
 data/.oauth_pending.json
