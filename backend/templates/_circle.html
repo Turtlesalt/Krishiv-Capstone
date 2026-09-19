@@ -1,0 +1,15 @@
+{% macro circle_diagram(members, verdicts={}, css_class='') %}
+<svg class="circle-diagram {{ css_class }}" viewBox="0 0 100 100" role="img" aria-label="Response status for {{ members|length }} member{{ 's' if members|length != 1 else '' }}">
+  <circle class="circle-ring" cx="50" cy="50" r="38"></circle>
+  {% for m in members %}
+  {% set pt = circle_point(loop.index0, members|length) %}
+  {% set verdict = verdicts.get(m.name) %}
+  {% set state = 'accepted' if verdict in ['accept', 'vote'] else ('declined' if verdict == 'decline' else ('tentative' if verdict == 'tentative' else 'idle')) %}
+  <g class="circle-node circle-node--{{ state }}" transform="translate({{ pt.x }} {{ pt.y }})">
+    <title>{{ m.name }}{% if verdict %} — {{ verdict }}{% else %} — waiting{% endif %}</title>
+    <circle class="circle-node-fill" r="8"></circle>
+    <text class="circle-node-label" text-anchor="middle" dy="2.6">{{ m.name[0]|upper }}</text>
+  </g>
+  {% endfor %}
+</svg>
+{% endmacro %}

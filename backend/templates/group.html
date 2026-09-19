@@ -1,52 +1,134 @@
 {% extends "base.html" %}
+{% from "_circle.html" import circle_diagram %}
+{% from "_flow.html" import flow_diagram %}
+{% block wrap_class %}wrap-none{% endblock %}
 {% block content %}
-<h1>{{ group.name }}</h1>
+<div class="section section-cream">
+  <div class="section-inner">
+    <h1>{{ group.name }}</h1>
+    <p class="lede">{{ group.members|length }} member{{ 's' if group.members|length != 1 else '' }} &middot; <a href="/groups/{{ group.id }}/favorites">My Favorite Spots</a> &middot; <a href="/groups/{{ group.id }}/preferences">Your Interests &amp; Dislikes</a></p>
 
-{% if error %}
-<p class="error">{{ error }}</p>
-{% endif %}
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
 
-<section>
-  <h2>Members</h2>
-  <ul class="members">
-    {% for m in group.members %}
-    <li>{{ m.name }} <span class="muted">({{ m.email }}{% if m.location %} - {{ m.location }}{% endif %})</span></li>
-    {% endfor %}
-  </ul>
-  <p>Invite friends with this link - anyone who opens it can join:</p>
-  <code class="join-link">{{ join_url }}</code>
-</section>
+    <div class="circle-hero">
+      <div class="circle-frame">
+        {{ circle_diagram(group.members, circle_state.verdicts) }}
+      </div>
+      <p class="circle-status">{{ circle_state.summary }}</p>
+    </div>
 
-<section>
-  <h2>Plan something</h2>
-  <form method="post" action="/groups/{{ group.id }}/plan">
-    <label>Day
-      <input type="date" name="date" required>
-    </label>
-    <label>Anything else to tell the agent? (optional)
-      <textarea name="note" rows="2" placeholder="e.g. keep it low-key, Priya's been busy with exams"></textarea>
-    </label>
-    <button type="submit">Ask the agent to plan it</button>
-  </form>
-</section>
+    <div class="stat-row">
+      <div class="stat-tile">
+        <span class="stat-number">{{ group.members|length }}</span>
+        <span class="stat-label">Members</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-number">{{ runs|length }}</span>
+        <span class="stat-label">Plans run</span>
+      </div>
+      <div class="stat-tile">
+        {% if circle_state.session_id %}
+        <span class="stat-number">{{ circle_state.verdicts|length }}/{{ group.members|length }}</span>
+        <span class="stat-label">Responded (latest plan)</span>
+        {% else %}
+        <span class="stat-number">&mdash;</span>
+        <span class="stat-label">No plan yet</span>
+        {% endif %}
+      </div>
+    </div>
 
-{% if runs %}
-<section>
-  <h2>Runs</h2>
-  {% for run in runs|reverse %}
-  <article class="run">
-    <p class="muted">Asked: {{ run.request }}</p>
-    <p>{{ run.response }}</p>
-    <form method="post" action="/groups/{{ group.id }}/reply" class="reply-form">
-      <input type="hidden" name="session_id" value="{{ run.session_id }}">
-      <select name="person">
-        {% for m in group.members %}<option value="{{ m.name }}">{{ m.name }}</option>{% endfor %}
-      </select>
-      <input type="text" name="message" placeholder="reply, e.g. can't make it, how about Sunday?" required>
-      <button type="submit">Send reply</button>
-    </form>
-  </article>
-  {% endfor %}
-</section>
-{% endif %}
+    <div class="how-it-works">
+      <p class="caption how-it-works-label">How the agent is progressing</p>
+      {{ flow_diagram(circle_state.stage) }}
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="layout">
+  <aside class="sidebar">
+    <div class="card">
+      <div class="card-head"><h2>Members</h2></div>
+      <ul class="members">
+        {% for m in group.members %}
+        <li class="member">
+          <span class="avatar">{{ m.name[0]|upper }}</span>
+          <div>
+            <div class="member-name">{{ m.name }}</div>
+            <div class="member-meta">{{ m.email }}{% if m.location %} &middot; {{ m.location }}{% endif %}</div>
+            {% if m.interests or m.dislikes %}
+            <div class="chips">
+              {% for tag in m.interests.split(',') if tag.strip() %}<span class="chip">{{ tag.strip() }}</span> {% endfor %}
+              {% for tag in m.dislikes.split(',') if tag.strip() %}<span class="chip dislike">{{ tag.strip() }}</span> {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Invite friends</h2>
+        <p class="caption">Share to invite people.</p>
+      </div>
+      <code class="join-link">{{ join_url }}</code>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="card">
+      <div class="card-head">
+        <h2>Plan something</h2>
+        <p class="caption">Checks calendars, weather &amp; venues, then emails everyone.</p>
+      </div>
+      <form method="post" action="/groups/{{ group.id }}/plan">
+        <div class="form-row cols-2">
+          <label>Day
+            <input type="date" name="date" required>
+          </label>
+        </div>
+        <label>Anything else to tell the agent? (optional)
+          <textarea name="note" rows="2" placeholder="e.g. keep it low-key, Priya's been busy with exams"></textarea>
+        </label>
+        <button type="submit">Ask the agent to plan it</button>
+      </form>
+    </div>
+
+    <section class="runs-section">
+      <h2>Runs</h2>
+      {% if runs %}
+      <div class="runs-list">
+        {% for run in runs|reverse %}
+        <article class="run">
+          <div class="run-circle-wrap">
+            <div class="circle-frame circle-frame-sm">
+              {{ circle_diagram(group.members, member_verdicts(group.id, run.session_id), 'circle-diagram-sm') }}
+            </div>
+            <div>
+              <p class="muted" style="margin:0;">Asked: {{ run.request }}</p>
+              <p style="margin:4px 0 0;">{{ run.response }}</p>
+            </div>
+          </div>
+          <form method="post" action="/groups/{{ group.id }}/reply" class="reply-form">
+            <input type="hidden" name="session_id" value="{{ run.session_id }}">
+            <select name="person">
+              {% for m in group.members %}<option value="{{ m.name }}">{{ m.name }}</option>{% endfor %}
+            </select>
+            <input type="text" name="message" placeholder="reply, e.g. can't make it, how about Sunday?" required>
+            <button type="submit">Send</button>
+          </form>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">No plans yet — ask the agent above to get started.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+</div>
 {% endblock %}

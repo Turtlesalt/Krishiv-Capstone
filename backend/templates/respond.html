@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block wrap_class %}wrap-narrow{% endblock %}
+{% block content %}
+{% if not valid %}
+<div class="status-banner status-banner--error">
+  <h1>Link expired</h1>
+  <p class="lede">This response link is invalid or has expired. Ask the organizer for a new plan, or reply to the original email instead.</p>
+</div>
+{% else %}
+<div class="status-banner status-banner--ok">
+  <h1>Got it</h1>
+  <p class="lede">{{ person }} is marked as <strong>{{ verdict }}</strong> for {{ group_name }}'s plan.</p>
+  {% if agent_error %}
+  <p class="error">The agent couldn't re-evaluate the plan right away: {{ agent_error }}</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
