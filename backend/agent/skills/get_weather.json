@@ -1,0 +1,22 @@
+{
+  "name": "get_weather",
+  "description": "Get a weather forecast for a location and date, to weigh whether outdoor plans make sense.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "City or place name"
+      },
+      "date": {
+        "type": "string",
+        "description": "Date, YYYY-MM-DD"
+      }
+    },
+    "required": ["location", "date"]
+  },
+  "implementation": {
+    "module": "skills_impl.weather",
+    "function": "get_weather"
+  }
+}

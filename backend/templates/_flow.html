@@ -1,0 +1,16 @@
+{% macro flow_diagram(stage) %}
+{% set stages = ['gather', 'propose', 'send', 'wait', 'reevaluate', 'confirm'] %}
+{% set labels = {'gather': 'Gather', 'propose': 'Propose', 'send': 'Send', 'wait': 'Wait', 'reevaluate': 'Re-evaluate', 'confirm': 'Confirm / Revise'} %}
+<svg class="flow-diagram" viewBox="0 0 640 64" role="img" aria-label="Planning stages, currently at {{ labels.get(stage, 'Gather') }}">
+  {% for s in stages %}
+  {% set x = 40 + loop.index0 * 112 %}
+  {% if not loop.last %}
+  <line class="flow-link" x1="{{ x + 34 }}" y1="24" x2="{{ x + 78 }}" y2="24"></line>
+  {% endif %}
+  <g class="flow-node {{ 'flow-node--active' if s == stage else '' }}">
+    <circle cx="{{ x }}" cy="24" r="15"></circle>
+    <text class="flow-node-label" x="{{ x }}" y="52" text-anchor="middle">{{ labels[s] }}</text>
+  </g>
+  {% endfor %}
+</svg>
+{% endmacro %}

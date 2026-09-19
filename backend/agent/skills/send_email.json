@@ -1,0 +1,48 @@
+{
+  "name": "send_email",
+  "description": "Send an email to one person with a proposed plan or a status update. Use this to deliver proposals and to report back when no plan could be found.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "person": {
+        "type": "string",
+        "description": "The person's name as listed among the group's members"
+      },
+      "subject": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      },
+      "is_proposal": {
+        "type": "boolean",
+        "description": "Set to true only when this email is an actual plan proposal with a concrete time/activity/venue the recipient can respond to. This adds one-click Accept / Decline / Tentative buttons to the email - no free-text reply needed. Leave false (or omit) for status updates, e.g. reporting that no plan could be found. Ignored (treated as true) when 'options' is set."
+      },
+      "options": {
+        "type": "array",
+        "description": "2-4 candidate venues for the recipient to vote between (e.g. straight from find_nearby_places). When set, the email shows one card per option with its own 'Vote for this' button, plus a single 'I'm out' decline button, instead of the single-option Accept/Decline/Tentative buttons. Pass the EXACT SAME list in the EXACT SAME order for every recipient of this proposal - option IDs are assigned by position, so a mismatched order would tally votes against the wrong option. Omit for a single-option proposal or a non-proposal status update.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "address": {"type": "string"},
+            "distance_km": {
+              "type": "number",
+              "description": "Optional - only include if find_nearby_places actually returned it for this venue."
+            },
+            "cuisine": {
+              "type": "string",
+              "description": "Optional - only include if find_nearby_places actually returned it for this venue."
+            }
+          },
+          "required": ["name", "address"]
+        }
+      }
+    },
+    "required": ["person", "subject", "body"]
+  },
+  "implementation": {
+    "module": "skills_impl.email",
+    "function": "send_email"
+  }
+}

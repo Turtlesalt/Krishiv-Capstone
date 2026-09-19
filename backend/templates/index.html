@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block wrap_class %}wrap-none{% endblock %}
+{% block content %}
+<div class="section section-cream">
+  <div class="section-inner">
+    <div class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Hangout planning, automated</p>
+        <h1>Plan hangouts with your friends, on autopilot</h1>
+        <p class="lede">Create a group, share the join link, and let the agent coordinate calendars,
+        weather, location, and everyone's interests to propose a plan the group will actually do.</p>
+      </div>
+
+      <div class="hard-card">
+        <div class="card-head">
+          <h2>Create a group</h2>
+          <p class="caption">Get a link to invite everyone else.</p>
+        </div>
+        <form method="post" action="/groups">
+          <label>Group name
+            <input type="text" name="group_name" required>
+          </label>
+          <div class="form-row cols-2">
+            <label>Your name
+              <input type="text" name="your_name" required>
+            </label>
+            <label>Your email
+              <input type="email" name="your_email" required>
+            </label>
+          </div>
+          <label>Your location (helps the agent recommend real nearby venues)
+            <input type="text" name="your_location" placeholder="e.g. Koramangala, Bangalore" required>
+          </label>
+          <div class="form-row cols-2">
+            <label>Your interests (optional)
+              <textarea name="your_interests" rows="2" placeholder="e.g. hiking, board games, live music"></textarea>
+            </label>
+            <label>Your dislikes (optional)
+              <textarea name="your_dislikes" rows="2" placeholder="e.g. loud bars, spicy food"></textarea>
+            </label>
+          </div>
+          <button type="submit">Create group</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section section-coral">
+  <div class="section-inner">
+    <p class="eyebrow">What the agent does</p>
+    <div class="feature-row">
+      <div class="feature-item">
+        <span class="feature-icon-box">🗓</span>
+        <span class="feature-item-label">Checks calendars</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon-box">🌦</span>
+        <span class="feature-item-label">Watches the weather</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon-box">📍</span>
+        <span class="feature-item-label">Finds real venues</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon-box">✉️</span>
+        <span class="feature-item-label">Emails the group</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

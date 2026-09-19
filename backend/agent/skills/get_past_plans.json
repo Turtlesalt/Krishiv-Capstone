@@ -1,0 +1,19 @@
+{
+  "name": "get_past_plans",
+  "description": "Get the group's history of past hangouts (activity, subgroup, date), to avoid repeating the same activity/group combo too often and to weigh fairness/recency.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "Max number of past plans to return, most recent first",
+        "default": 20
+      }
+    },
+    "required": []
+  },
+  "implementation": {
+    "module": "skills_impl.past_plans",
+    "function": "get_past_plans"
+  }
+}

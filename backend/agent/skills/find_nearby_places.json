@@ -1,0 +1,36 @@
+{
+  "name": "find_nearby_places",
+  "description": "Search OpenStreetMap for real venues (e.g. restaurants, cafes, bowling alleys, parks) near a location, to ground a proposed activity in an actual named place instead of a vague or invented suggestion. Only call this with a location that came from get_member_locations for a real member - never guess or make up a location. The search radius is expanded automatically (in steps) if the tight default radius doesn't turn up enough options, and results are already ranked/filtered against the given members' saved favorites and stated interests/dislikes - you don't need to re-apply preferences yourself, just pick from what comes back. Each place includes 'distance_km', and, when it's a real drive rather than a short trip, a 'distance_note' - if a place has a distance_note, mention that distance/drive time explicitly in your proposal rather than presenting it as nearby. OpenStreetMap has no rating/review data, so a place's popularity or quality can't be verified beyond it being a real, named venue - don't claim or imply a rating you don't have.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "A place, neighborhood, or city to search near, taken from get_member_locations"
+      },
+      "category": {
+        "type": "string",
+        "description": "The broad venue type, e.g. 'restaurants', 'cafes', 'parks', 'bars'. Do not put a cuisine or theme here - use 'keyword' for that."
+      },
+      "keyword": {
+        "type": "string",
+        "description": "Optional cuisine, dish, or theme to filter by within the category, e.g. 'sushi', 'vegan', 'rooftop'. If the request named a specific cuisine/theme, ALWAYS put it here - never drop it or bury it inside 'category'. If no matching venue exists, the result will say so plainly rather than silently returning an unrelated venue - report that honestly instead of substituting."
+      },
+      "max_results": {
+        "type": "integer",
+        "description": "Max number of places to return",
+        "default": 5
+      },
+      "members": {
+        "type": "array",
+        "items": {"type": "string"},
+        "description": "Names of the members this search is for (whoever is actually free/included in this plan). Used to prioritize their saved favorite spots and stated interests above an equally-rated stranger place, and to filter out a place that clearly matches one of their stated dislikes. Omit to consider the whole group."
+      }
+    },
+    "required": ["location", "category"]
+  },
+  "implementation": {
+    "module": "skills_impl.places",
+    "function": "find_nearby_places"
+  }
+}

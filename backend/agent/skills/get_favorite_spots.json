@@ -1,0 +1,22 @@
+{
+  "name": "get_favorite_spots",
+  "description": "Get group members' saved favorite spots (restaurants/bars/cafes/activities they've said they actually like), to weight venue recommendations toward places people already enjoy instead of only relying on find_nearby_places. Each favorite is tagged with which member saved it. Optionally filter by category and/or a cuisine/theme keyword, using the same vocabulary as find_nearby_places.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "category": {
+        "type": "string",
+        "description": "Optional broad category to filter by: restaurant, bar, cafe, activity, or other. Leave blank to return all categories."
+      },
+      "keyword": {
+        "type": "string",
+        "description": "Optional cuisine/theme keyword to filter by, matched against each favorite's name and notes - e.g. 'sushi', 'vegan'. Leave blank for no keyword filter. Only include a matching favorite in a proposal if it actually fits the requested activity/cuisine - never force an unrelated favorite in just because someone saved it."
+      }
+    },
+    "required": []
+  },
+  "implementation": {
+    "module": "skills_impl.favorites",
+    "function": "get_favorite_spots"
+  }
+}
