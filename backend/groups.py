@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from paths import DATA_DIR as _DATA_ROOT
 from skills_impl.geocoding import geocode
 
 _SAFE_QUOTED_WORDS = {"accept", "decline", "tentative", "vote", "yes", "no"}
@@ -39,7 +40,7 @@ def _member(name: str, email: str, location: str, interests: str = "", dislikes:
     }
 
 
-DATA_DIR = Path(__file__).resolve().parent / "data" / "groups"
+DATA_DIR = _DATA_ROOT / "groups"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -266,6 +267,19 @@ def sessions_dir(group_id: str) -> Path:
 
 
 FAVORITE_CATEGORIES = ["restaurant", "bar", "cafe", "activity", "other"]
+
+
+def favorite_category_matches(favorite_category: str, category: str) -> bool:
+    """True if a caller-supplied category (as passed to find_nearby_places or
+    get_favorite_spots, which document it as accepting the plural form, e.g.
+    "restaurants") matches a favorite's stored category (always singular, one
+    of FAVORITE_CATEGORIES). An empty category matches everything. This is
+    the one place this normalization lives - both call sites import it so it
+    can't silently diverge into two different rules again."""
+    category = category.strip().lower()
+    if not category:
+        return True
+    return favorite_category.strip().lower() in (category, category.rstrip("s"))
 
 
 def favorites_file(group_id: str) -> Path:

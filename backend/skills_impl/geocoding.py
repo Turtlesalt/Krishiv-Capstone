@@ -1,7 +1,8 @@
 import json
-from pathlib import Path
 
 import requests
+
+from paths import DATA_DIR
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 _USER_AGENT = "hangout-planner-agent/0.1 (capstone project, local use)"
@@ -12,7 +13,7 @@ _USER_AGENT = "hangout-planner-agent/0.1 (capstone project, local use)"
 # (find_nearby_places, member location lookups) reuses the cached lat/lon
 # instead of re-hitting Nominatim, which is both faster and keeps us well
 # under its ~1 req/sec public-usage policy.
-_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "geocode_cache.json"
+_CACHE_PATH = DATA_DIR / "geocode_cache.json"
 
 
 def _normalize(location: str) -> str:

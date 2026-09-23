@@ -14,10 +14,16 @@
   --text-on-fill: #FFECC0;
   --text-muted: #5B4E42;
 
-  /* the 3 given accents - fills for buttons/badges/icon boxes/stat tiles */
+  /* the accent palette - fills for buttons/badges/icon boxes/stat tiles.
+     --bg-coral/--bg-gold/--bg-berry above mirror these 1:1 (kept as two
+     names since both are already referenced across templates/CSS) - every
+     theme block below updates both together so they never drift apart. */
   --accent-primary: #9E2A4D;
   --accent-secondary: #FF7057;
   --accent-tertiary: #FFC66D;
+  /* restrained supporting accent - small contained elements only (one stat
+     tile, small badges/counts) - never a section/page background */
+  --accent-blue: #6C8FA3;
 
   /* kept distinct from the accent triad (all warm reds/oranges) so accept
      vs decline stays legible at a glance */
@@ -39,19 +45,74 @@
   --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Applies when the OS prefers dark and there's no explicit in-app choice.
+   A :root[data-theme] block below always wins over this (higher
+   specificity), regardless of source order, so an explicit toggle choice
+   always overrides the OS preference in either direction. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     color-scheme: dark;
-    --bg: #231A14;
+    --bg: #2A1420;
     --card-bg: #2E2119;
     --input-bg: #2A1F17;
     --text-primary: #FFECC0;
     --text-muted: #C9B7A6;
-    /* pure black would vanish against a near-black bg */
     --border-color: #FFECC0;
-    /* lighter than --bg so the offset still reads as a visible shadow */
     --shadow-color: #4A3020;
+    /* muted workhorse gold - large-fill role (sections, big card fills) -
+       desaturated so it doesn't glow against the near-black background */
+    --bg-gold: #8A6A38;
+    --accent-tertiary: #8A6A38;
+    /* rare "pop" accent - banners/badges/hover only - brighter than the
+       workhorse gold above so it still reads as deliberate against dark */
+    --bg-coral: #FF8264;
+    --accent-secondary: #FF8264;
+    /* small contained elements only - lightened from the light-mode value
+       so it doesn't visually merge into the dark plum background */
+    --bg-berry: #C13F65;
+    --accent-primary: #C13F65;
+    --accent-blue: #8FAAB8;
   }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #FFECC0;
+  --card-bg: #FFFFFF;
+  --input-bg: #FFECC0;
+  --text-primary: #171310;
+  --text-muted: #5B4E42;
+  --border-color: #000000;
+  --shadow-color: #000000;
+  /* explicit light choice always wins, even when the OS prefers dark -
+     reset every accent the dark block below can touch, not just surfaces */
+  --bg-gold: #FFC66D;
+  --accent-tertiary: #FFC66D;
+  --bg-coral: #FF7057;
+  --accent-secondary: #FF7057;
+  --bg-berry: #9E2A4D;
+  --accent-primary: #9E2A4D;
+  --accent-blue: #6C8FA3;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #2A1420;
+  --card-bg: #2E2119;
+  --input-bg: #2A1F17;
+  --text-primary: #FFECC0;
+  --text-muted: #C9B7A6;
+  /* pure black would vanish against a near-black bg */
+  --border-color: #FFECC0;
+  /* lighter than --bg so the offset still reads as a visible shadow */
+  --shadow-color: #4A3020;
+  --bg-gold: #8A6A38;
+  --accent-tertiary: #8A6A38;
+  --bg-coral: #FF8264;
+  --accent-secondary: #FF8264;
+  --bg-berry: #C13F65;
+  --accent-primary: #C13F65;
+  --accent-blue: #8FAAB8;
 }
 
 * { box-sizing: border-box; }
@@ -125,6 +186,12 @@ a { color: var(--accent-primary); font-weight: 600; }
 
 /* ---------- nav icons ---------- */
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
 .nav-icons {
   display: flex;
   gap: 14px;
@@ -174,6 +241,51 @@ a { color: var(--accent-primary); font-weight: 600; }
   text-transform: uppercase;
   color: var(--text-primary);
 }
+
+/* ---------- theme toggle ---------- */
+
+.theme-toggle {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+  background: var(--bg-berry);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sharp);
+  color: var(--text-on-fill);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--shadow-offset-sm) var(--shadow-offset-sm) 0 var(--shadow-color);
+}
+
+.theme-toggle:hover { background: var(--bg-berry); }
+
+.theme-toggle:active {
+  transform: translate(var(--shadow-offset-sm), var(--shadow-offset-sm));
+  box-shadow: none;
+}
+
+.theme-toggle svg { width: 20px; height: 20px; }
+
+.theme-toggle .icon-sun { display: none; }
+.theme-toggle .icon-moon { display: block; }
+
+/* OS prefers dark, no explicit choice yet - show the sun (click to go light) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .theme-toggle .icon-sun { display: block; }
+  :root:not([data-theme]) .theme-toggle .icon-moon { display: none; }
+}
+
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+:root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
 /* ---------- section color blocking ---------- */
 
@@ -354,10 +466,14 @@ h3 {
   color: var(--text-primary);
 }
 
-.stat-tile:nth-child(4n+1) { background: var(--bg-gold); }
-.stat-tile:nth-child(4n+2) { background: var(--bg-coral); }
-.stat-tile:nth-child(4n+3) { background: var(--bg-berry); color: var(--text-on-fill); }
-.stat-tile:nth-child(4n+4) { background: var(--card-bg); }
+/* Each tile in a row gets a different fill rather than all sharing one
+   accent - berry/gold/blue for the small-contained, workhorse, and
+   restrained-supporting roles respectively, cream for a 4th neutral tile.
+   No coral here: coral is reserved for banners/badges/hover, never a card fill. */
+.stat-tile:nth-child(4n+1) { background: var(--bg-berry); color: var(--text-on-fill); }
+.stat-tile:nth-child(4n+2) { background: var(--bg-gold); }
+.stat-tile:nth-child(4n+3) { background: var(--accent-blue); color: var(--text-on-fill); }
+.stat-tile:nth-child(4n+4) { background: var(--bg); }
 
 .stat-number {
   display: block;
@@ -374,6 +490,26 @@ h3 {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+/* small solid-fill count indicator - the blue accent's other allowed use,
+   confined to a badge, never a large fill */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  margin-left: 6px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  background: var(--accent-blue);
+  color: var(--text-on-fill);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
 }
 
 /* ---------- group page layout ---------- */

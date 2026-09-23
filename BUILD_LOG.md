@@ -289,3 +289,54 @@ s11## 2026-09-19 17:23:20
 - **Files changed:**
   - BUILD_LOG.md
 
+## 2026-09-19 17:42:03
+- **Message:** Log merge commit in BUILD_LOG.md
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+
+## Commit: Fix recommendation personalization bugs, add theme toggle, rebalance UI colors
+
+- Date: 2026-09-24
+- Time spent: ~3-4 hours (spans a diagnostic investigation with real session-log
+  tracing, two backend fixes with scripted verification against the real code
+  and data, and a full UI color audit/implementation/browser verification)
+- Rough tokens used: ~350,000-550,000 (Claude Code doesn't expose an exact
+  cumulative counter for a session; this is a rough order-of-magnitude
+  estimate from conversation length and tool-call volume, not a precise
+  measurement)
+- What shipped:
+  - Diagnosed why emailed venue recommendations ignored favorites/preferences:
+    traced the live Gemini tool-calling path (there's no separate "assemble
+    options" function - the model itself orchestrates
+    get_member_preferences/get_favorite_spots/find_nearby_places/send_email)
+    using a real historical session log plus a scratch-copied data dir to
+    reproduce it safely
+  - Fixed `get_favorite_spots` (skills_impl/favorites.py) silently returning
+    zero favorites whenever called with the plural category form
+    ("restaurants") that its own tool schema documents - the singular/plural
+    normalization now lives in one shared `groups.favorite_category_matches`,
+    used by both `get_favorite_spots` and `find_nearby_places`'s internal
+    favorites lookup, so it can't diverge into two copies again
+  - Fixed `find_nearby_places` (skills_impl/places.py) discarding
+    already-computed favorites/preference matches whenever the Overpass API
+    timed out - it now degrades to a favorites/preference-only result with an
+    explanatory note instead of a bare error that forced the agent into
+    ever-more-generic retries
+  - Centralized data-directory resolution in new `backend/paths.py` (DATA_DIR
+    from env, defaulting to ./data) and pointed groups.py/geocoding.py/
+    google_oauth.py at it, so a mounted volume path works the same everywhere
+  - Added the light/dark theme toggle (base.html header button + app.js click
+    handler + localStorage persistence, with a pre-paint inline script so
+    there's no flash on load)
+  - Rebalanced UI color proportions to match the target design ratio: removed
+    coral as a large section/card fill (index.html feature band -> gold,
+    group.html stat tiles -> berry/gold/blue), added a new restrained
+    `--accent-blue` accent (one stat tile + a small "Runs" count badge), and
+    gave dark mode its own tuned accent values (muted workhorse gold,
+    brighter pop coral, lightened berry) instead of reusing light-mode hexes
+    unchanged
+  - Verified all of the above against the real code and real data (diagnostic
+    scripts run through the actual live path) and in a real browser
+    (Playwright screenshots of the light/dark landing and dashboard pages)
+

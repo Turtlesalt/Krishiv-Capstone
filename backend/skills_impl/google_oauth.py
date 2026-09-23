@@ -1,12 +1,12 @@
 import json
 import os
-from pathlib import Path
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+from paths import DATA_DIR
+
 TOKEN_FILE = DATA_DIR / "google_token.json"
 
 # google-auth-oauthlib's Flow generates a PKCE code_verifier inside the Flow
@@ -60,10 +60,10 @@ def save_credentials(creds: Credentials) -> None:
 
 def get_credentials() -> Credentials:
     if not TOKEN_FILE.exists():
+        base_url = os.getenv("APP_BASE_URL", f"http://localhost:{os.getenv('PORT', '8000')}").rstrip("/")
         raise RuntimeError(
-            "No Google OAuth token found. Visit http://localhost:"
-            f"{os.getenv('PORT', '8000')}/oauth2/login in your browser first "
-            "to connect your Google account."
+            f"No Google OAuth token found. Visit {base_url}/oauth2/login in your "
+            "browser first to connect your Google account."
         )
     creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
     if creds.expired and creds.refresh_token:
