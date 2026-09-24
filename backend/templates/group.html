@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "_circle.html" import circle_diagram %}
 {% from "_flow.html" import flow_diagram %}
+{% from "_stickers.html" import sticker %}
 {% block wrap_class %}wrap-none{% endblock %}
 {% block content %}
 <div class="section section-cream">
@@ -16,7 +17,12 @@
       <div class="circle-frame">
         {{ circle_diagram(group.members, circle_state.verdicts) }}
       </div>
-      <p class="circle-status">{{ circle_state.summary }}</p>
+      <div class="circle-status-row">
+        {# only once the vote has a winner AND nobody is still pending #}
+        {% if circle_state.stage == "confirm" and circle_state.verdicts|length == group.members|length %}{{ sticker("popper", 80, "sticker--pop") }}{% endif %}
+        <p class="circle-status">{{ circle_state.summary }}</p>
+      </div>
+      <div class="sticker-cluster">{{ sticker("coffee", 84) }}{{ sticker("chat", 76) }}</div>
     </div>
 
     <div class="stat-row">
@@ -77,6 +83,7 @@
       </div>
       <code class="join-link">{{ join_url }}</code>
     </div>
+    {{ sticker("laughing", 88, "sticker--sidebar") }}
   </aside>
 
   <div class="main">
@@ -125,7 +132,7 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="empty-state">No plans yet. The form above is right there, just saying.</div>
+      <div class="empty-state">{{ sticker("empty", 72) }}<span>No plans yet. The form above is right there, just saying.</span></div>
       {% endif %}
     </section>
   </div>

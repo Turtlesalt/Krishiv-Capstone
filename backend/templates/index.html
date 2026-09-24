@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% from "_member_fields.html" import member_fields %}
+{% from "_stickers.html" import sticker %}
 {% block wrap_class %}wrap-none{% endblock %}
 {% block content %}
 <div class="section section-cream section-hero">
   <div class="section-inner">
     <div class="hero">
       <div class="hero-text">
+        {{ sticker("cheers", 84, "sticker--hero") }}
         <p class="eyebrow">Group chats are where plans go to die</p>
-        <h1 class="hero-title">Actually <span class="mega-word">hang<br>out</span> with your friends</h1>
+        <h1 class="hero-title">Actually <span class="mega-word"><span class="mega-line mega-line--h">hang</span> <span class="mega-line mega-line--o">out</span></span> with your friends</h1>
         <p class="lede">Make a group, drop the link in the chat, and the agent sorts out calendars,
         weather, places and everyone's opinions, then pitches a plan people will actually show up to.</p>
       </div>
@@ -31,7 +33,10 @@
 
 <div class="section section-gold">
   <div class="section-inner">
-    <p class="eyebrow">What the agent handles so you don't have to</p>
+    <div class="band-head">
+      <p class="eyebrow">What the agent handles so you don't have to</p>
+      {{ sticker("laughing", 84, "sticker--band") }}
+    </div>
     <div class="feature-row">
       <div class="feature-item">
         <span class="feature-icon-box">🗓</span>

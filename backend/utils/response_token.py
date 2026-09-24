@@ -22,6 +22,30 @@ def _b64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
 
 
+def sign_payload(payload: dict) -> str:
+    """HMAC-sign any JSON payload - shared by email response links and the
+    member identity cookie / sign-in links (utils/identity.py)."""
+    payload_bytes = json.dumps(payload, separators=(",", ":")).encode()
+    signature = hmac.new(_secret(), payload_bytes, hashlib.sha256).digest()
+    return f"{_b64url_encode(payload_bytes)}.{_b64url_encode(signature)}"
+
+
+def verify_payload(token: str) -> dict | None:
+    """The payload if the signature checks out, else None. Checks nothing
+    else - each caller validates its own fields and expiry."""
+    try:
+        payload_part, signature_part = token.split(".", 1)
+        payload_bytes = _b64url_decode(payload_part)
+        signature = _b64url_decode(signature_part)
+        expected_signature = hmac.new(_secret(), payload_bytes, hashlib.sha256).digest()
+        if not hmac.compare_digest(signature, expected_signature):
+            return None
+        payload = json.loads(payload_bytes)
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
+
+
 def create_response_token(
     plan_id: str, person_id: str, verdict: str, option_id: str | None = None
 ) -> str:
@@ -40,9 +64,7 @@ def create_response_token(
     }
     if option_id:
         payload["option_id"] = option_id
-    payload_bytes = json.dumps(payload, separators=(",", ":")).encode()
-    signature = hmac.new(_secret(), payload_bytes, hashlib.sha256).digest()
-    return f"{_b64url_encode(payload_bytes)}.{_b64url_encode(signature)}"
+    return sign_payload(payload)
 
 
 def create_option_token(plan_id: str, person_id: str, option_id: str) -> str:
@@ -56,15 +78,9 @@ def verify_response_token(token: str) -> dict | None:
     or expired token - untrusted input from an email link, so anything that
     doesn't check out cleanly is treated as invalid rather than raising."""
     try:
-        payload_part, signature_part = token.split(".", 1)
-        payload_bytes = _b64url_decode(payload_part)
-        signature = _b64url_decode(signature_part)
-
-        expected_signature = hmac.new(_secret(), payload_bytes, hashlib.sha256).digest()
-        if not hmac.compare_digest(signature, expected_signature):
+        payload = verify_payload(token)
+        if payload is None:
             return None
-
-        payload = json.loads(payload_bytes)
         verdict = payload.get("verdict")
         if verdict not in VALID_VERDICTS:
             return None

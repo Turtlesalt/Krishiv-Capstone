@@ -413,8 +413,30 @@ h3 {
 .feature-row {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: start;
+  grid-template-columns: 1fr;
 }
+
+/* explicit column counts (not auto-fit, which wraps 4 items into 3 + 1) */
+@media (min-width: 520px) {
+  .feature-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 860px) {
+  .feature-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* band heading: eyebrow on the left, sticker on the right, both in normal
+   flow so the sticker can never overlap the hero card or the features */
+.band-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.band-head .eyebrow { margin: 0; }
 
 .feature-item {
   display: flex;
@@ -537,7 +559,8 @@ form { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
 }
 
 @media (min-width: 520px) {
-  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  /* minmax(0, ...) so a field's default size can't widen its column */
+  .form-row.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 label {
@@ -568,6 +591,9 @@ input, textarea, select {
 }
 
 select { -webkit-appearance: menulist; appearance: menulist; }
+
+/* fill the label, never the browser's default size (textarea cols=20 = 230px) */
+input, textarea { width: 100%; min-width: 0; }
 
 textarea { min-height: 0; resize: vertical; }
 
@@ -645,9 +671,6 @@ button:active, .btn:active {
 
 .member { display: flex; gap: 12px; align-items: flex-start; }
 .member form { margin: 0 0 0 auto; flex: none; }
-
-.person-switch { flex-direction: row; align-items: flex-end; gap: 12px; }
-.person-switch select { min-width: 200px; }
 
 .avatar {
   flex: none;
@@ -961,6 +984,13 @@ button:active, .btn:active {
   text-shadow: 6px 6px 0 var(--bg-coral);
 }
 
+/* Archivo Black leaves blank space left of H (0.0625em) and O (0.03125em).
+   At mega size that pushes the strokes 5-10px right of the lines above, so
+   each line pulls back by its first letter's bearing (em, so it scales). */
+.mega-line { display: block; }
+.mega-line--h { margin-left: -0.0625em; }
+.mega-line--o { margin-left: -0.03125em; }
+
 .status-banner { position: relative; overflow: hidden; }
 .status-banner > :not(.mega-check) { position: relative; }
 
@@ -994,10 +1024,6 @@ button:active, .btn:active {
   }
   .hero .hero-text { align-self: start; }
   .section-hero + .section .section-inner { padding-top: calc(56px + var(--offset)); }
-
-  /* home: features step down in a stagger */
-  .feature-row { padding-bottom: var(--offset); }
-  .feature-item:nth-child(even) { transform: translateY(var(--offset)); }
 
   /* dashboard: circle moves off-centre, status line sits beside it,
      one unit lower than the frame's top */
@@ -1185,4 +1211,83 @@ button.is-busy, button.is-busy:hover {
   font-weight: 500;
   font-size: 0.92rem;
   max-width: 56ch;
+}
+
+/* ---------- sticker accents (drawings live in templates/_stickers.html) ----------
+   Pure decoration: every one is aria-hidden, and the ones that sit in empty
+   gutters are absolutely positioned so they never move text, and only show
+   once there's room for them. */
+
+.sticker-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.sticker {
+  display: block;
+  flex: none;
+  height: auto;
+  overflow: visible;
+  rotate: var(--tilt);
+}
+
+.wrap-offset, .wrap-narrow { position: relative; }
+
+/* landing: cheers beside the eyebrow, right of "ACTUALLY" */
+.sticker--hero { position: absolute; top: -6px; right: 4px; }
+.hero-text { position: relative; }
+
+
+/* dashboard: popper beside the status line, only once a plan is confirmed */
+.circle-status-row { display: flex; align-items: center; justify-content: center; gap: 16px; }
+
+/* dashboard: the "no plans yet" box */
+.empty-state:has(.sticker) { display: flex; align-items: center; justify-content: center; gap: 18px; text-align: left; }
+
+/* extras that only appear where the page has empty space to fill */
+.sticker-cluster, .sticker--sidebar, .sticker--corner,
+.sticker--gutter-left, .sticker--gutter-right, .sticker--band { display: none; }
+
+@media (min-width: 520px) {
+  .sticker--band { display: block; }
+}
+
+@media (max-width: 519px) {
+  .sticker--hero { display: none; }
+}
+
+@media (min-width: 860px) {
+  .circle-status-row { justify-content: flex-start; margin-top: var(--offset); }
+  .circle-status-row .circle-status { margin-top: 0; }
+  .sticker-cluster { display: flex; align-items: flex-end; gap: 20px; margin: var(--offset) 12px 0 auto; }
+  .sticker-cluster .sticker--chat { margin-bottom: 44px; }
+}
+
+@media (min-width: 900px) {
+  .sticker--sidebar { display: block; align-self: center; margin-top: -8px; }
+  .sticker--corner { display: block; position: absolute; top: 120px; right: 48px; }
+}
+
+@media (min-width: 1040px) {
+  .sticker--gutter-left, .sticker--gutter-right { display: block; position: absolute; }
+  .sticker--gutter-left { left: -150px; top: 210px; }
+  .sticker--gutter-right { right: -150px; top: 360px; }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .sticker { transition: scale 0.12s ease; }
+  .sticker:hover { animation: stickerWiggle 0.32s ease; scale: 1.06; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sticker--pop { animation: stickerPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both; }
+}
+
+@keyframes stickerWiggle {
+  0%, 100% { rotate: var(--tilt); }
+  35% { rotate: calc(var(--tilt) - 9deg); }
+  70% { rotate: calc(var(--tilt) + 5deg); }
+}
+
+@keyframes stickerPop {
+  0% { opacity: 0; scale: 0.2; rotate: calc(var(--tilt) - 30deg); }
+  60% { opacity: 1; scale: 1.15; }
+  100% { opacity: 1; scale: 1; rotate: var(--tilt); }
 }

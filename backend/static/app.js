@@ -142,10 +142,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.querySelectorAll("form.reply-form, form.person-switch").forEach((form) => {
+  document.querySelectorAll("form.reply-form").forEach((form) => {
     const btn = form.querySelector('button[type="submit"]');
     if (!btn) return;
-    const isReply = form.classList.contains("reply-form");
     form.addEventListener("submit", (event) => {
       if (btn.dataset.rippled) {
         // second pass (our own requestSubmit) goes through; anything after is a double submit
@@ -156,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
       event.preventDefault();
       btn.dataset.rippled = "true";
       btn.classList.add("btn-ripple");
-      if (isReply) startAgentLoading(form, "reply");
+      startAgentLoading(form, "reply");
       window.setTimeout(() => form.requestSubmit ? form.requestSubmit(btn) : form.submit(), rippleDelay);
     });
   });

@@ -482,3 +482,44 @@ s11## 2026-09-19 17:23:20
     field; tiles equal width and top at 1440-640px, stacked below; no
     horizontal overflow
 
+## 2026-09-25 00:57:37
+- **Message:** Put member count in an equal 3-tile stat row, share member form fields
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/static/style.css
+  - backend/templates/_member_fields.html
+  - backend/templates/group.html
+  - backend/templates/index.html
+  - backend/templates/join.html
+
+## Commit: Email-link sign-in for per-person pages, sticker accents, alignment and form fixes
+
+- Date: 2026-09-25
+- Time spent: ~3 hours (six rounds: headline alignment, form-card overflow,
+  identity/sign-in, sticker drafts, sticker rollout, feature-row fix - each
+  measured in headless Chromium before and after)
+- Rough tokens used: ~1-2 million (rough estimate; many full-page screenshots
+  and re-measurements; Claude Code doesn't expose an exact counter)
+- What shipped:
+  - Identity: Preferences and Favorite Spots no longer have a "Who's this?"
+    dropdown or trust a ?person= param. One helper, utils/identity.py
+    current_member(), reads a signed per-group cookie (member email) set on
+    create/join, or via a 30-minute sign-in link emailed from the new
+    /groups/{id}/signin page. Joining with an existing member's email no
+    longer signs you in as them. 24 end-to-end checks pass
+  - Refactors for that: shared sign_payload/verify_payload in
+    utils/response_token.py; deliver() split out of the agent's send_email
+  - Hero headline: HANG/OUT pulled left by their glyph side bearing
+    (0.0625em / 0.03125em) so every line's visible left edge matches exactly
+  - Form cards: inputs/textareas are width 100% and two-column rows use
+    minmax(0, 1fr), so textarea default width no longer overflows the join
+    card (was -10px) or pushes the home card off-page
+  - Stickers: 8 inline-SVG line-art stickers (templates/_stickers.html,
+    one sprite per page) with hard offset shadows, theme-aware colours and a
+    hover wiggle, placed in empty space on 7 pages; popper only shows once a
+    plan is confirmed and everyone has replied
+  - Feature row: removed the deliberate even-item stagger, explicit 1/2/4
+    columns; band sticker moved into normal flow so it can't overlap the
+    hero card or the features
+

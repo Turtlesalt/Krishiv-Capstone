@@ -1,0 +1,123 @@
+{# Hand-drawn sticker accents. Each drawing is defined once in the sprite
+   (rendered by base.html); sticker() stamps a copy: first a solid offset
+   copy as the hard shadow, then the coloured shape, then its line details
+   (which cast no shadow). Colours arrive as --f (fill) / --s (outline) so
+   one drawing paints as both the sticker and its shadow, and follows the
+   light/dark theme tokens. Strokes are non-scaling: always exactly 3px. #}
+
+{% set solid %}style="fill:var(--f);stroke:var(--s)" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round"{% endset %}
+{% set line %}fill="none" style="stroke:var(--border-color)" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"{% endset %}
+{% set ink %}style="fill:var(--border-color)"{% endset %}
+
+{# name: (fill token, resting tilt in degrees) #}
+{% set sticker_styles = {
+  'cheers': ('--bg-gold', 6),
+  'popper': ('--bg-berry', -4),
+  'empty': ('--accent-blue', 3),
+  'coffee': ('--accent-blue', -5),
+  'laughing': ('--bg-coral', 4),
+  'chat': ('--bg-gold', -3),
+  'pin': ('--bg-berry', 5),
+  'pizza': ('--bg-coral', -6),
+} %}
+
+{% macro sticker(name, size=84, class='') %}
+{% set fill, tilt = sticker_styles[name] %}
+<svg class="sticker sticker--{{ name }} {{ class }}" style="--tilt:{{ tilt }}deg;width:{{ size }}px" viewBox="-6 -6 112 112" aria-hidden="true" focusable="false">
+  <use href="#stk-{{ name }}" transform="translate(4.5 4.5)" style="--f:var(--shadow-color);--s:var(--shadow-color)"/>
+  <use href="#stk-{{ name }}" style="--f:var({{ fill }});--s:var(--border-color)"/>
+  <use href="#stk-{{ name }}-lines"/>
+</svg>
+{%- endmacro %}
+
+{% macro wine_glass(cx, angle) -%}
+<g transform="rotate({{ angle }} {{ cx }} 60)"><path d="M{{ cx-15 }} 26 H{{ cx+15 }} C{{ cx+17 }} 46 {{ cx+10 }} 56 {{ cx+3 }} 58 V76 H{{ cx+11 }} V82 H{{ cx-11 }} V76 H{{ cx-3 }} V58 C{{ cx-10 }} 56 {{ cx-17 }} 46 {{ cx-15 }} 26 Z" {{ solid }}/></g>
+{%- endmacro %}
+
+{% macro sticker_sprite() %}
+<svg class="sticker-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    {# two wine glasses clinking #}
+    <g id="stk-cheers">{{ wine_glass(34, -14) }}{{ wine_glass(66, 14) }}</g>
+    <g id="stk-cheers-lines">
+      <g transform="rotate(-14 34 60)"><path d="M19.5 36 H48.5" {{ line }}/></g>
+      <g transform="rotate(14 66 60)"><path d="M51.5 36 H80.5" {{ line }}/></g>
+      <path d="M50 4 V13 M36 8 L41 15 M64 8 L59 15" {{ line }}/>
+    </g>
+
+    {# party popper bursting #}
+    <g id="stk-popper">
+      <path d="M10 92 L32 38 L64 70 Z" {{ solid }}/>
+      <rect x="74" y="44" width="11" height="11" transform="rotate(20 79 49)" {{ solid }}/>
+      <path d="M60 8 l10 3 -8 7 z" {{ solid }}/>
+      <circle cx="86" cy="22" r="5.5" {{ solid }}/>
+      <circle cx="38" cy="18" r="4" {{ solid }}/>
+    </g>
+    <g id="stk-popper-lines">
+      <path d="M22 62 L42 82 M28 48 L54 74" {{ line }}/>
+      <path d="M48 34 q6 -8 12 0 t12 0" {{ line }}/>
+      <path d="M70 82 q8 -2 10 6" {{ line }}/>
+    </g>
+
+    {# open, empty box with a "meh" face #}
+    <g id="stk-empty">
+      <path d="M18 44 L6 26 L40 22 L50 38 Z" {{ solid }}/>
+      <path d="M82 44 L94 26 L60 22 L50 38 Z" {{ solid }}/>
+      <path d="M18 44 H82 V90 H18 Z" {{ solid }}/>
+    </g>
+    <g id="stk-empty-lines">
+      <circle cx="38" cy="62" r="2.8" {{ ink }}/><circle cx="62" cy="62" r="2.8" {{ ink }}/>
+      <path d="M40 76 q5 -4 10 0 t10 0" {{ line }}/>
+      <path d="M46 14 q4 -7 8 0 M58 10 l3 -5" {{ line }}/>
+    </g>
+
+    {# steaming mug #}
+    <g id="stk-coffee">
+      <path d="M64 42 H79 C93 42 93 72 79 72 H64 Z M66 51 H78 C84 51 84 63 78 63 H66 Z" fill-rule="evenodd" {{ solid }}/>
+      <path d="M18 34 H70 V76 Q70 90 56 90 H32 Q18 90 18 76 Z" {{ solid }}/>
+    </g>
+    <g id="stk-coffee-lines">
+      <path d="M32 24 q-5 -6 0 -11 t0 -10 M46 24 q-5 -6 0 -11 t0 -10 M60 24 q-5 -6 0 -11 t0 -10" {{ line }}/>
+      <path d="M44 72 C32 64 34 54 40 54 C43 54 44 57 44 57 C44 57 45 54 48 54 C54 54 56 64 44 72 Z" {{ line }}/>
+    </g>
+
+    {# two friends cracking up #}
+    <g id="stk-laughing">
+      <circle cx="68" cy="40" r="24" {{ solid }}/>
+      <circle cx="38" cy="62" r="28" {{ solid }}/>
+    </g>
+    <g id="stk-laughing-lines">
+      <path d="M61 35 l4 -4 4 4 M73 35 l4 -4 4 4" {{ line }}/>
+      <path d="M66 45 H84 Q84 56 75 56 Q66 56 66 45 Z" {{ ink }}/>
+      <path d="M24 56 l5 -5 5 5 M42 56 l5 -5 5 5" {{ line }}/>
+      <path d="M26 67 H52 Q52 84 39 84 Q26 84 26 67 Z" {{ ink }}/>
+      <path d="M90 12 l4 -7 M96 22 l7 -3" {{ line }}/>
+    </g>
+
+    {# group-chat bubble, typing #}
+    <g id="stk-chat">
+      <path d="M12 20 Q12 12 20 12 H80 Q88 12 88 20 V58 Q88 66 80 66 H42 L24 84 L28 66 H20 Q12 66 12 58 Z" {{ solid }}/>
+    </g>
+    <g id="stk-chat-lines">
+      <circle cx="33" cy="39" r="5" {{ ink }}/><circle cx="50" cy="39" r="5" {{ ink }}/><circle cx="67" cy="39" r="5" {{ ink }}/>
+    </g>
+
+    {# map pin #}
+    <g id="stk-pin">
+      <path d="M50 90 C34 70 22 56 22 40 A28 28 0 0 1 78 40 C78 56 66 70 50 90 Z M50 28 A12 12 0 1 0 50.01 28 Z" fill-rule="evenodd" {{ solid }}/>
+    </g>
+    <g id="stk-pin-lines">
+      <path d="M32 96 Q50 102 68 96" {{ line }}/>
+    </g>
+
+    {# pizza slice #}
+    <g id="stk-pizza">
+      <path d="M50 94 L16 30 Q50 14 84 30 Z" {{ solid }}/>
+      <path d="M12 22 Q50 4 88 22 L84 32 Q50 16 16 32 Z" {{ solid }}/>
+    </g>
+    <g id="stk-pizza-lines">
+      <circle cx="41" cy="42" r="5.5" {{ line }}/><circle cx="60" cy="52" r="5.5" {{ line }}/><circle cx="48" cy="70" r="4.5" {{ line }}/>
+    </g>
+  </defs>
+</svg>
+{%- endmacro %}

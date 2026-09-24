@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_stickers.html" import sticker %}
+{% block wrap_class %}wrap-narrow{% endblock %}
+{% block content %}
+<h1>Who's this?</h1>
+<p class="lede">This device doesn't know you in "{{ group.name }}" yet. We'll email you a link that signs you in.</p>
+
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+{{ sticker("chat", 88, "sticker--gutter-right") }}
+<div class="card">
+  {% if sent %}
+  <div class="card-head">
+    <h2>Check your inbox</h2>
+    <p class="caption">If that email is in this group, a sign-in link is on its way. It works for 30 minutes.</p>
+  </div>
+  {% else %}
+  <form method="post" action="/groups/{{ group.id }}/signin">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>The email you joined with
+      <input type="email" name="email" required autocomplete="email">
+    </label>
+    <button type="submit">Email me a link</button>
+  </form>
+  {% endif %}
+</div>
+
+<p class="caption">Not in the group yet? <a href="/groups/{{ group.id }}/join">Join it</a>.</p>
+{% endblock %}

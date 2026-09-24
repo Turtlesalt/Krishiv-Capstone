@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 {% from "_member_fields.html" import member_fields %}
+{% from "_stickers.html" import sticker %}
 {% block wrap_class %}wrap-narrow{% endblock %}
 {% block content %}
 <h1>You're invited to "{{ group.name }}"</h1>
 <p class="lede">Add yourself so the next plan counts you in.</p>
 
+{{ sticker("coffee", 92, "sticker--gutter-left") }}
+{{ sticker("laughing", 92, "sticker--gutter-right") }}
 <div class="card">
   <form method="post" action="/groups/{{ group.id }}/join">
     {{ member_fields() }}

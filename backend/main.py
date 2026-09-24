@@ -1,3 +1,4 @@
+import html
 import json
 import math
 import os
@@ -22,6 +23,8 @@ import groups
 from agent import context as agent_context
 from agent import loop as agent_loop
 from skills_impl import google_oauth
+from skills_impl.email import deliver as deliver_email
+from utils import identity
 from utils.response_token import verify_response_token
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -154,8 +157,55 @@ def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
 
 
+def _get_group_or_404(group_id: str) -> dict:
+    group = groups.get_group(group_id)
+    if group is None:
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
+    return group
+
+
+# Pages a sign-in can send you back to (whitelisted: `next` comes from a URL).
+_SIGNIN_NEXT = {"preferences", "favorites"}
+
+
+def _safe_next(next_page: str) -> str:
+    return next_page if next_page in _SIGNIN_NEXT else ""
+
+
+def _signin_redirect(group_id: str, next_page: str) -> RedirectResponse:
+    return RedirectResponse(f"/groups/{group_id}/signin?next={next_page}", status_code=303)
+
+
+def _send_signin_link(group: dict, member: dict, next_page: str) -> None:
+    base_url = os.getenv("APP_BASE_URL", f"http://localhost:{os.getenv('PORT', '8000')}").rstrip("/")
+    token = identity.create_signin_token(group["id"], member["email"])
+    link = f"{base_url}/groups/{group['id']}/signin/verify?token={token}&next={next_page}"
+    body = (
+        f"Hi {member['name']},\n\nOpen this link to sign in to \"{group['name']}\" on SyncCircle:\n"
+        f"{link}\n\nIt works for 30 minutes. Didn't ask for this? Ignore it - nothing changes."
+    )
+    html_body = (
+        f'<p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;">Hi {html.escape(member["name"])},</p>'
+        '<p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;">'
+        f'<a href="{html.escape(link)}">Sign in to &ldquo;{html.escape(group["name"])}&rdquo;</a>'
+        " &middot; works for 30 minutes.</p>"
+    )
+    deliver_email(member["email"], f"Your sign-in link for {group['name']}", body, html_body)
+
+
+def _signin_page(request: Request, group: dict, next_page: str, sent: bool = False,
+                 error: str | None = None, status_code: int = 200):
+    return templates.TemplateResponse(
+        request,
+        "signin.html",
+        {"group": group, "next": next_page, "sent": sent, "error": error},
+        status_code=status_code,
+    )
+
+
 @app.post("/groups")
 def create_group(
+    request: Request,
     group_name: str = Form(...),
     your_name: str = Form(...),
     your_email: str = Form(...),
@@ -166,14 +216,14 @@ def create_group(
     group = groups.create_group(
         group_name, your_name, your_email, your_location, your_interests, your_dislikes
     )
-    return RedirectResponse(f"/groups/{group['id']}", status_code=303)
+    response = RedirectResponse(f"/groups/{group['id']}", status_code=303)
+    identity.remember_member(request, response, group["id"], your_email)
+    return response
 
 
 @app.get("/groups/{group_id}", response_class=HTMLResponse)
 def group_page(request: Request, group_id: str):
-    group = groups.get_group(group_id)
-    if group is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
+    group = _get_group_or_404(group_id)
     join_url = str(request.base_url).rstrip("/") + f"/groups/{group_id}/join"
     return templates.TemplateResponse(
         request,
@@ -189,14 +239,13 @@ def group_page(request: Request, group_id: str):
 
 @app.get("/groups/{group_id}/join", response_class=HTMLResponse)
 def join_page(request: Request, group_id: str):
-    group = groups.get_group(group_id)
-    if group is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
+    group = _get_group_or_404(group_id)
     return templates.TemplateResponse(request, "join.html", {"group": group})
 
 
 @app.post("/groups/{group_id}/join")
 def join_group(
+    request: Request,
     group_id: str,
     name: str = Form(...),
     email: str = Form(...),
@@ -204,60 +253,90 @@ def join_group(
     interests: str = Form(""),
     dislikes: str = Form(""),
 ):
-    if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
+    group = _get_group_or_404(group_id)
+    if identity.find_member(group, email):
+        # Already a member: typing someone's email into the join form must not
+        # sign you in as them, so they go through the emailed link instead.
+        return _signin_redirect(group_id, "")
     groups.add_member(group_id, name, email, location, interests, dislikes)
-    return RedirectResponse(f"/groups/{group_id}", status_code=303)
+    response = RedirectResponse(f"/groups/{group_id}", status_code=303)
+    identity.remember_member(request, response, group_id, email)
+    return response
+
+
+@app.get("/groups/{group_id}/signin", response_class=HTMLResponse)
+def signin_page(request: Request, group_id: str, next: str = ""):
+    return _signin_page(request, _get_group_or_404(group_id), _safe_next(next))
+
+
+@app.post("/groups/{group_id}/signin", response_class=HTMLResponse)
+def send_signin(request: Request, group_id: str, email: str = Form(...), next: str = Form("")):
+    group = _get_group_or_404(group_id)
+    member = identity.find_member(group, email.strip())
+    if member is not None:
+        try:
+            _send_signin_link(group, member, _safe_next(next))
+        except Exception as exc:
+            return _signin_page(request, group, _safe_next(next),
+                                error=f"Couldn't send the email ({exc}). Is Gmail connected? Try again in a bit.")
+    # Same answer whether or not the email is in the group, so this page
+    # can't be used to check who's a member.
+    return _signin_page(request, group, _safe_next(next), sent=True)
+
+
+@app.get("/groups/{group_id}/signin/verify")
+def verify_signin(request: Request, group_id: str, token: str, next: str = ""):
+    group = _get_group_or_404(group_id)
+    member = identity.redeem_signin_token(token, group)
+    if member is None:
+        return _signin_page(request, group, _safe_next(next), status_code=400,
+                            error="That sign-in link has expired or isn't valid. Get a fresh one below.")
+    response = RedirectResponse(f"/groups/{group_id}/{_safe_next(next)}".rstrip("/"), status_code=303)
+    identity.remember_member(request, response, group_id, member["email"])
+    return response
 
 
 @app.get("/groups/{group_id}/preferences", response_class=HTMLResponse)
-def preferences_page(request: Request, group_id: str, person: str = ""):
-    group = groups.get_group(group_id)
-    if group is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
-    if not group["members"]:
-        raise HTTPException(status_code=400, detail="Group has no members yet")
-    if not person or not any(m["name"] == person for m in group["members"]):
-        person = group["members"][0]["name"]
-    member = next(m for m in group["members"] if m["name"] == person)
-
+def preferences_page(request: Request, group_id: str):
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "preferences")
     return templates.TemplateResponse(
         request,
         "preferences.html",
-        {"group": group, "person": person, "member": member},
+        {"group": group, "person": member["name"], "member": member},
     )
 
 
 @app.post("/groups/{group_id}/preferences")
 def update_preferences(
+    request: Request,
     group_id: str,
-    name: str = Form(...),
     interests: str = Form(""),
     dislikes: str = Form(""),
 ):
-    if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
-    groups.update_member_preferences(group_id, name, interests, dislikes)
-    return RedirectResponse(f"/groups/{group_id}/preferences?person={name}", status_code=303)
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "preferences")
+    groups.update_member_preferences(group_id, member["name"], interests, dislikes)
+    return RedirectResponse(f"/groups/{group_id}/preferences", status_code=303)
 
 
 @app.get("/groups/{group_id}/favorites", response_class=HTMLResponse)
-def favorites_page(request: Request, group_id: str, person: str = ""):
-    group = groups.get_group(group_id)
-    if group is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
-    if not group["members"]:
-        raise HTTPException(status_code=400, detail="Group has no members yet")
-    if not person or not any(m["name"] == person for m in group["members"]):
-        person = group["members"][0]["name"]
-
+def favorites_page(request: Request, group_id: str):
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "favorites")
     return templates.TemplateResponse(
         request,
         "favorites.html",
         {
             "group": group,
-            "person": person,
-            "favorites": groups.list_favorites(group_id, person),
+            "person": member["name"],
+            "favorites": groups.list_favorites(group_id, member["name"]),
             "categories": groups.FAVORITE_CATEGORIES,
         },
     )
@@ -265,24 +344,28 @@ def favorites_page(request: Request, group_id: str, person: str = ""):
 
 @app.post("/groups/{group_id}/favorites")
 def add_favorite(
+    request: Request,
     group_id: str,
-    person: str = Form(...),
     name: str = Form(...),
     category: str = Form(...),
     notes: str = Form(""),
 ):
-    if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
-    groups.add_favorite(group_id, person, name, category, notes)
-    return RedirectResponse(f"/groups/{group_id}/favorites?person={person}", status_code=303)
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "favorites")
+    groups.add_favorite(group_id, member["name"], name, category, notes)
+    return RedirectResponse(f"/groups/{group_id}/favorites", status_code=303)
 
 
 @app.post("/groups/{group_id}/favorites/{favorite_id}/delete")
-def delete_favorite(group_id: str, favorite_id: str, person: str = Form(...)):
-    if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
-    groups.remove_favorite(group_id, person, favorite_id)
-    return RedirectResponse(f"/groups/{group_id}/favorites?person={person}", status_code=303)
+def delete_favorite(request: Request, group_id: str, favorite_id: str):
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "favorites")
+    groups.remove_favorite(group_id, member["name"], favorite_id)
+    return RedirectResponse(f"/groups/{group_id}/favorites", status_code=303)
 
 
 def _recap_is_grounded(text: str, group_id: str, session_id: str) -> bool:

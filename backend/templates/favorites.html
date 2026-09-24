@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% from "_stickers.html" import sticker %}
 {% block wrap_class %}wrap wrap-offset{% endblock %}
 {% block content %}
 <h1>Your go-to spots</h1>
+{{ sticker("pin", 92, "sticker--corner") }}
 <p class="lede"><a href="/groups/{{ group.id }}">&larr; Back to {{ group.name }}</a></p>
 
 <div class="explainer">
@@ -17,23 +19,8 @@
 
 <div class="card">
   <div class="card-head">
-    <h2>Who's this?</h2>
-    <p class="caption">Everyone has their own list. Pick yourself.</p>
-  </div>
-  <form method="get" action="/groups/{{ group.id }}/favorites" class="person-switch">
-    <label>I am&hellip;
-      <select name="person" onchange="this.form.submit()">
-        {% for m in group.members %}<option value="{{ m.name }}" {% if m.name == person %}selected{% endif %}>{{ m.name }}</option>{% endfor %}
-      </select>
-    </label>
-    <button type="submit">Switch</button>
-  </form>
-</div>
-
-<div class="card">
-  <div class="card-head">
     <h2>{{ person }}'s spots</h2>
-    <p class="caption">The agent sneaks these in whenever it can.</p>
+    <p class="caption">The agent sneaks these in whenever it can. Not {{ person }}? <a href="/groups/{{ group.id }}/signin?next=favorites">Sign in as you</a>.</p>
   </div>
   {% if favorites %}
   <ul class="members">
@@ -45,7 +32,6 @@
         <div class="member-meta">{{ f.category|capitalize }}{% if f.notes %} &middot; {{ f.notes }}{% endif %}</div>
       </div>
       <form method="post" action="/groups/{{ group.id }}/favorites/{{ f.id }}/delete">
-        <input type="hidden" name="person" value="{{ person }}">
         <button type="submit" class="btn-secondary">Remove</button>
       </form>
     </li>
@@ -62,7 +48,6 @@
     <p class="caption">Somewhere you'd happily go again.</p>
   </div>
   <form method="post" action="/groups/{{ group.id }}/favorites">
-    <input type="hidden" name="person" value="{{ person }}">
     <div class="form-row cols-2">
       <label>Name
         <input type="text" name="name" required placeholder="e.g. Elite Cafe">

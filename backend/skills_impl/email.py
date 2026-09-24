@@ -147,6 +147,12 @@ def send_email(
     elif is_proposal:
         html_body = _proposal_html(body, _response_buttons_html(plan_id, member["name"]))
 
+    return deliver(to_addr, subject, body, html_body)
+
+
+def deliver(to_addr: str, subject: str, body: str, html_body: str | None = None) -> dict:
+    """Actually send (or, in MOCK_MODE, print) one email. No agent checks -
+    callers passing LLM-written text must ground it first, as send_email does."""
     mock_mode = os.getenv("MOCK_MODE", "true").lower() == "true"
     if mock_mode:
         print(f"[MOCK EMAIL] To: {to_addr}\nSubject: {subject}\n\n{body}\n")
