@@ -340,3 +340,33 @@ s11## 2026-09-19 17:23:20
     scripts run through the actual live path) and in a real browser
     (Playwright screenshots of the light/dark landing and dashboard pages)
 
+## 2026-09-24 00:25:55
+- **Message:** Fix recommendation personalization bugs, add theme toggle, rebalance UI colors
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/.env.example
+  - backend/groups.py
+  - backend/paths.py
+  - backend/skills_impl/favorites.py
+  - backend/skills_impl/geocoding.py
+  - backend/skills_impl/google_oauth.py
+  - backend/skills_impl/places.py
+  - backend/static/app.js
+  - backend/static/style.css
+  - backend/templates/base.html
+  - backend/templates/group.html
+  - backend/templates/index.html
+
+## Commit: Log previous commit and merge latest work into main
+
+- Date: 2026-09-24
+- Time spent: ~5 minutes (checking how the app is run/deployed, committing
+  the pending build-log entry, pushing, and opening/merging the PR to main)
+- Rough tokens used: ~40,000-60,000 (rough estimate from conversation length
+  and tool-call volume; Claude Code doesn't expose an exact counter)
+- What shipped:
+  - Committed the auto-generated build-log entry for the previous commit
+  - Opened and merged a PR from `assesment-2-krishiv` into `main` so `main`
+    has the personalization fixes, theme toggle and UI color rebalance
+
