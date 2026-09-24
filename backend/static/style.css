@@ -181,7 +181,8 @@ a { color: var(--accent-primary); font-weight: 600; }
 }
 
 @media (min-width: 640px) {
-  .tagline { display: inline; }
+  /* line up with the 40px toggle box, not the box + its label */
+  .tagline { display: inline; align-self: flex-start; line-height: 44px; }
 }
 
 /* ---------- nav icons ---------- */
@@ -223,9 +224,9 @@ a { color: var(--accent-primary); font-weight: 600; }
 
 .nav-icon-box svg { width: 20px; height: 20px; }
 
-.nav-icon:nth-child(1) .nav-icon-box { background: var(--bg-gold); }
-.nav-icon:nth-child(2) .nav-icon-box { background: var(--bg-coral); }
-.nav-icon:nth-child(3) .nav-icon-box { background: var(--card-bg); }
+.nav-icons .nav-icon:nth-child(1) .nav-icon-box { background: var(--bg-gold); }
+.nav-icons .nav-icon:nth-child(2) .nav-icon-box { background: var(--bg-coral); }
+.nav-icons .nav-icon:nth-child(3) .nav-icon-box { background: var(--card-bg); }
 
 .nav-icon:active .nav-icon-box,
 .nav-icon-box:active {
@@ -244,23 +245,15 @@ a { color: var(--accent-primary); font-weight: 600; }
 
 /* ---------- theme toggle ---------- */
 
+/* Sits in a .nav-icon wrapper (box + label) like the nav links, and
+   inherits .nav-icon-box sizing/border/shadow so it lines up with them. */
 .theme-toggle {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
   min-height: 0;
   padding: 0;
   flex: none;
   background: var(--bg-berry);
-  border: var(--border-width) solid var(--border-color);
-  border-radius: var(--radius-sharp);
   color: var(--text-on-fill);
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  box-shadow: var(--shadow-offset-sm) var(--shadow-offset-sm) 0 var(--shadow-color);
 }
 
 .theme-toggle:hover { background: var(--bg-berry); }

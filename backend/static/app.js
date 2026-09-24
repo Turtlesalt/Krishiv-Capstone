@@ -4,9 +4,11 @@
 // (the reply form, favorite delete). Before the browser navigates away we
 // play a brief ripple on the button so the click feels confirmed, then
 // submit for real.
-// Light/dark toggle. base.html already applies any saved choice before
-// first paint (inline head script) so there's no flash - this just wires
-// up the click and keeps localStorage in sync.
+// Light/dark toggle. The choice is saved in a "theme" cookie, which the
+// server reads to render data-theme on <html> for every page (so it
+// carries over from the sign-up screen into the group pages even where
+// localStorage is blocked); localStorage is kept as a fallback that the
+// inline head script in base.html also reads.
 function currentTheme() {
   const saved = document.documentElement.dataset.theme;
   if (saved === "light" || saved === "dark") return saved;
@@ -15,10 +17,18 @@ function currentTheme() {
 
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
+  document.cookie = "theme=" + theme + "; path=/; max-age=31536000; SameSite=Lax";
   try {
     localStorage.setItem("theme", theme);
   } catch (e) {}
 }
+
+// Pages shown via back/forward can come from a cache holding whatever
+// theme they had when left, so re-apply the saved choice on every show.
+window.addEventListener("pageshow", () => {
+  const match = document.cookie.match(/(?:^|; )theme=(light|dark)/);
+  if (match) document.documentElement.dataset.theme = match[1];
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   const toggle = document.getElementById("theme-toggle");

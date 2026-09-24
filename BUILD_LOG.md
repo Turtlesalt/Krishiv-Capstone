@@ -370,3 +370,32 @@ s11## 2026-09-19 17:23:20
   - Opened and merged a PR from `assesment-2-krishiv` into `main` so `main`
     has the personalization fixes, theme toggle and UI color rebalance
 
+## 2026-09-24 21:53:54
+- **Message:** Log previous commit and merge prep in BUILD_LOG.md
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+
+## Commit: Align theme toggle with nav buttons and keep theme across pages
+
+- Date: 2026-09-24
+- Time spent: ~15 minutes (21:53-22:08, reproducing in a local Playwright
+  browser test, fixing, and re-verifying)
+- Rough tokens used: ~80,000-120,000 (rough estimate from conversation
+  length and tool-call volume; Claude Code doesn't expose an exact counter)
+- What shipped:
+  - Theme toggle now sits in the same box + label layout as the
+    Dashboard/Favorites/Prefs icons (with a "Theme" label), so it lines up
+    with them; scoped the per-icon background colors to the nav list so the
+    toggle keeps its berry fill; lined the landing-page tagline up with it
+  - Theme choice is now also saved in a `theme` cookie that base.html reads
+    server-side to render `data-theme` on `<html>`, so the mode picked on
+    the sign-up screen carries into the group pages even where
+    localStorage is unavailable; existing localStorage choices migrate to
+    the cookie automatically
+  - Re-apply the saved theme on `pageshow` so pages reached with
+    back/forward don't show a stale mode
+  - Verified in headless Chromium: dark chosen on sign-up stays dark after
+    creating a group (server-rendered), all four header boxes share the
+    same top/size, no horizontal overflow at 375px
+
