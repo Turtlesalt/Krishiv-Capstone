@@ -5,8 +5,16 @@
 {% block content %}
 <div class="section section-cream">
   <div class="section-inner">
-    <h1>{{ group.name }}</h1>
-    <p class="lede">{{ group.members|length }} member{{ 's' if group.members|length != 1 else '' }} &middot; <a href="/groups/{{ group.id }}/favorites">My Favorite Spots</a> &middot; <a href="/groups/{{ group.id }}/preferences">Your Interests &amp; Dislikes</a></p>
+    <div class="dash-head">
+      <div>
+        <h1>{{ group.name }}</h1>
+        <p class="lede"><a href="/groups/{{ group.id }}/favorites">My Favorite Spots</a> &middot; <a href="/groups/{{ group.id }}/preferences">Your Interests &amp; Dislikes</a></p>
+      </div>
+      <div class="mega-stat">
+        <span class="mega-number">{{ group.members|length }}</span>
+        <span class="mega-label">in the gang</span>
+      </div>
+    </div>
 
     {% if error %}
     <p class="error">{{ error }}</p>
@@ -21,17 +29,13 @@
 
     <div class="stat-row">
       <div class="stat-tile">
-        <span class="stat-number">{{ group.members|length }}</span>
-        <span class="stat-label">Members</span>
-      </div>
-      <div class="stat-tile">
         <span class="stat-number">{{ runs|length }}</span>
-        <span class="stat-label">Plans run</span>
+        <span class="stat-label">Plans cooked up</span>
       </div>
       <div class="stat-tile">
         {% if circle_state.session_id %}
         <span class="stat-number">{{ circle_state.verdicts|length }}/{{ group.members|length }}</span>
-        <span class="stat-label">Responded (latest plan)</span>
+        <span class="stat-label">Replied to the latest plan</span>
         {% else %}
         <span class="stat-number">&mdash;</span>
         <span class="stat-label">No plan yet</span>
@@ -40,7 +44,7 @@
     </div>
 
     <div class="how-it-works">
-      <p class="caption how-it-works-label">How the agent is progressing</p>
+      <p class="caption how-it-works-label">Where the agent's at</p>
       {{ flow_diagram(circle_state.stage) }}
     </div>
   </div>
@@ -50,7 +54,7 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="card">
-      <div class="card-head"><h2>Members</h2></div>
+      <div class="card-head"><h2>The gang</h2></div>
       <ul class="members">
         {% for m in group.members %}
         <li class="member">
@@ -72,8 +76,8 @@
 
     <div class="card">
       <div class="card-head">
-        <h2>Invite friends</h2>
-        <p class="caption">Share to invite people.</p>
+        <h2>Bring your people</h2>
+        <p class="caption">Send this link. Anyone with it can join.</p>
       </div>
       <code class="join-link">{{ join_url }}</code>
     </div>
@@ -83,7 +87,7 @@
     <div class="card">
       <div class="card-head">
         <h2>Plan something</h2>
-        <p class="caption">Checks calendars, weather &amp; venues, then emails everyone.</p>
+        <p class="caption">Pick a day. The agent checks calendars, weather and places, then emails everyone.</p>
       </div>
       <form method="post" action="/groups/{{ group.id }}/plan">
         <div class="form-row cols-2">
@@ -91,15 +95,15 @@
             <input type="date" name="date" required>
           </label>
         </div>
-        <label>Anything else to tell the agent? (optional)
+        <label>Anything the agent should know? (optional)
           <textarea name="note" rows="2" placeholder="e.g. keep it low-key, Priya's been busy with exams"></textarea>
         </label>
-        <button type="submit">Ask the agent to plan it</button>
+        <button type="submit">Make it happen</button>
       </form>
     </div>
 
     <section class="runs-section">
-      <h2>Runs{% if runs %} <span class="badge-count">{{ runs|length }}</span>{% endif %}</h2>
+      <h2>Plans so far{% if runs %} <span class="badge-count">{{ runs|length }}</span>{% endif %}</h2>
       {% if runs %}
       <div class="runs-list">
         {% for run in runs|reverse %}
@@ -109,7 +113,7 @@
               {{ circle_diagram(group.members, member_verdicts(group.id, run.session_id), 'circle-diagram-sm') }}
             </div>
             <div>
-              <p class="muted" style="margin:0;">Asked: {{ run.request }}</p>
+              <p class="muted" style="margin:0;">You asked: {{ run.request }}</p>
               <p style="margin:4px 0 0;">{{ run.response }}</p>
             </div>
           </div>
@@ -118,14 +122,14 @@
             <select name="person">
               {% for m in group.members %}<option value="{{ m.name }}">{{ m.name }}</option>{% endfor %}
             </select>
-            <input type="text" name="message" placeholder="reply, e.g. can't make it, how about Sunday?" required>
+            <input type="text" name="message" placeholder="talk back, e.g. &quot;can't do Sat, Sunday?&quot;" required>
             <button type="submit">Send</button>
           </form>
         </article>
         {% endfor %}
       </div>
       {% else %}
-      <div class="empty-state">No plans yet — ask the agent above to get started.</div>
+      <div class="empty-state">No plans yet. The form above is right there, just saying.</div>
       {% endif %}
     </section>
   </div>

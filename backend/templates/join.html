@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block wrap_class %}wrap-narrow{% endblock %}
 {% block content %}
-<h1>Join "{{ group.name }}"</h1>
-<p class="lede">Add yourself so the agent can include you in the next plan.</p>
+<h1>You're invited to "{{ group.name }}"</h1>
+<p class="lede">Add yourself so the next plan counts you in.</p>
 
 <div class="card">
   <form method="post" action="/groups/{{ group.id }}/join">
@@ -14,18 +14,18 @@
         <input type="email" name="email" required>
       </label>
     </div>
-    <label>Your location (helps the agent recommend real nearby venues)
+    <label>Where are you based? (so we suggest places you can actually get to)
       <input type="text" name="location" placeholder="e.g. Koramangala, Bangalore" required>
     </label>
     <div class="form-row cols-2">
-      <label>Your interests (optional)
+      <label>Things you're into (optional)
         <textarea name="interests" rows="2" placeholder="e.g. hiking, board games, live music"></textarea>
       </label>
-      <label>Your dislikes (optional)
+      <label>Hard passes (optional)
         <textarea name="dislikes" rows="2" placeholder="e.g. loud bars, spicy food"></textarea>
       </label>
     </div>
-    <button type="submit">Join group</button>
+    <button type="submit">I'm in</button>
   </form>
 </div>
 {% endblock %}

@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% block wrap_class %}wrap-none{% endblock %}
 {% block content %}
-<div class="section section-cream">
+<div class="section section-cream section-hero">
   <div class="section-inner">
     <div class="hero">
       <div class="hero-text">
-        <p class="eyebrow">Hangout planning, automated</p>
-        <h1>Plan hangouts with your friends, on autopilot</h1>
-        <p class="lede">Create a group, share the join link, and let the agent coordinate calendars,
-        weather, location, and everyone's interests to propose a plan the group will actually do.</p>
+        <p class="eyebrow">Group chats are where plans go to die</p>
+        <h1 class="hero-title">Actually <span class="mega-word">hang<br>out</span> with your friends</h1>
+        <p class="lede">Make a group, drop the link in the chat, and the agent sorts out calendars,
+        weather, places and everyone's opinions, then pitches a plan people will actually show up to.</p>
       </div>
 
       <div class="hard-card">
         <div class="card-head">
-          <h2>Create a group</h2>
-          <p class="caption">Get a link to invite everyone else.</p>
+          <h2>Start a gang</h2>
+          <p class="caption">You'll get a link to rope everyone else in.</p>
         </div>
         <form method="post" action="/groups">
           <label>Group name
@@ -28,18 +28,18 @@
               <input type="email" name="your_email" required>
             </label>
           </div>
-          <label>Your location (helps the agent recommend real nearby venues)
+          <label>Where are you based? (so we suggest places you can actually get to)
             <input type="text" name="your_location" placeholder="e.g. Koramangala, Bangalore" required>
           </label>
           <div class="form-row cols-2">
-            <label>Your interests (optional)
+            <label>Things you're into (optional)
               <textarea name="your_interests" rows="2" placeholder="e.g. hiking, board games, live music"></textarea>
             </label>
-            <label>Your dislikes (optional)
+            <label>Hard passes (optional)
               <textarea name="your_dislikes" rows="2" placeholder="e.g. loud bars, spicy food"></textarea>
             </label>
           </div>
-          <button type="submit">Create group</button>
+          <button type="submit">Create group &rarr;</button>
         </form>
       </div>
     </div>
@@ -48,23 +48,23 @@
 
 <div class="section section-gold">
   <div class="section-inner">
-    <p class="eyebrow">What the agent does</p>
+    <p class="eyebrow">What the agent handles so you don't have to</p>
     <div class="feature-row">
       <div class="feature-item">
         <span class="feature-icon-box">🗓</span>
-        <span class="feature-item-label">Checks calendars</span>
+        <span class="feature-item-label">Checks who's actually free</span>
       </div>
       <div class="feature-item">
         <span class="feature-icon-box">🌦</span>
-        <span class="feature-item-label">Watches the weather</span>
+        <span class="feature-item-label">Watches the sky</span>
       </div>
       <div class="feature-item">
         <span class="feature-icon-box">📍</span>
-        <span class="feature-item-label">Finds real venues</span>
+        <span class="feature-item-label">Finds real places, not made-up ones</span>
       </div>
       <div class="feature-item">
         <span class="feature-icon-box">✉️</span>
-        <span class="feature-item-label">Emails the group</span>
+        <span class="feature-item-label">Does the group email for you</span>
       </div>
     </div>
   </div>

@@ -399,3 +399,45 @@ s11## 2026-09-19 17:23:20
     creating a group (server-rendered), all four header boxes share the
     same top/size, no horizontal overflow at 375px
 
+## 2026-09-24 22:08:48
+- **Message:** Align theme toggle with nav buttons and keep theme across pages
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/static/app.js
+  - backend/static/style.css
+  - backend/templates/base.html
+
+## Commit: Personality pass - voice, oversized type, asymmetry, hover details, loading states
+
+- Date: 2026-09-25
+- Time spent: ~50 minutes of hands-on work (2026-09-24 23:40 to 2026-09-25
+  00:29, from scratch-script timestamps), done in five stages with approval
+  of each before moving on
+- Rough tokens used: ~300,000-600,000 (rough estimate from conversation
+  length, tool-call volume and the many verification screenshots; Claude
+  Code doesn't expose an exact counter)
+- What shipped:
+  - Microcopy: every template plus the dashboard status lines, agent errors
+    and 404s in main.py rewritten in a cheeky-friend voice (approved list;
+    "crew" changed to "gang" per review); response pages now say "in / out /
+    a maybe" instead of the raw verdict value
+  - Oversized type, used only three times: "HANG / OUT" in the home hero,
+    a giant member count on the dashboard (replacing the matching stat
+    tile), and a thick SVG check on the response/vote confirmation pages
+  - Asymmetry on one 24px unit (`--offset`), desktop only: sign-up card
+    hangs 24px into the gold band, staggered feature row, off-centre circle
+    diagram with its status line dropped 24px, second stat tile dropped
+    24px, hanging headings on favorites/likes
+  - Hover/cursor: 1deg card tilt + lift (not on cards containing forms),
+    -2deg button tilt, header icon wiggle, dot cursor over the circle
+    diagram, bouncy "Name - status" tags on circle nodes; all motion off
+    under prefers-reduced-motion and on touch devices
+  - Loading: "Make it happen" and reply "Send" switch to a busy label and a
+    status strip cycling on-brand lines every 2.5s; guards against double
+    submits and resets on back/forward
+  - Verified with headless Chromium: all pages render (light/dark, 1280px
+    and 375px, no horizontal overflow), measured the 24px overlap, hover
+    states, tooltip text, reduced-motion behaviour, and that each form
+    submits exactly once while showing the loading lines
+
