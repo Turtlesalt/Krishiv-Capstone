@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_member_fields.html" import member_fields %}
 {% block wrap_class %}wrap-narrow{% endblock %}
 {% block content %}
 <h1>You're invited to "{{ group.name }}"</h1>
@@ -6,25 +7,7 @@
 
 <div class="card">
   <form method="post" action="/groups/{{ group.id }}/join">
-    <div class="form-row cols-2">
-      <label>Your name
-        <input type="text" name="name" required>
-      </label>
-      <label>Your email
-        <input type="email" name="email" required>
-      </label>
-    </div>
-    <label>Where are you based? (so we suggest places you can actually get to)
-      <input type="text" name="location" placeholder="e.g. Koramangala, Bangalore" required>
-    </label>
-    <div class="form-row cols-2">
-      <label>Things you're into (optional)
-        <textarea name="interests" rows="2" placeholder="e.g. hiking, board games, live music"></textarea>
-      </label>
-      <label>Hard passes (optional)
-        <textarea name="dislikes" rows="2" placeholder="e.g. loud bars, spicy food"></textarea>
-      </label>
-    </div>
+    {{ member_fields() }}
     <button type="submit">I'm in</button>
   </form>
 </div>

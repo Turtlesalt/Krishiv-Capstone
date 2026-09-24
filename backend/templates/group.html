@@ -5,16 +5,8 @@
 {% block content %}
 <div class="section section-cream">
   <div class="section-inner">
-    <div class="dash-head">
-      <div>
-        <h1>{{ group.name }}</h1>
-        <p class="lede"><a href="/groups/{{ group.id }}/favorites">My Favorite Spots</a> &middot; <a href="/groups/{{ group.id }}/preferences">Your Interests &amp; Dislikes</a></p>
-      </div>
-      <div class="mega-stat">
-        <span class="mega-number">{{ group.members|length }}</span>
-        <span class="mega-label">in the gang</span>
-      </div>
-    </div>
+    <h1>{{ group.name }}</h1>
+    <p class="lede"><a href="/groups/{{ group.id }}/favorites">My Favorite Spots</a> &middot; <a href="/groups/{{ group.id }}/preferences">Your Interests &amp; Dislikes</a></p>
 
     {% if error %}
     <p class="error">{{ error }}</p>
@@ -28,6 +20,10 @@
     </div>
 
     <div class="stat-row">
+      <div class="stat-tile">
+        <span class="stat-number">{{ group.members|length }}</span>
+        <span class="stat-label">In the gang</span>
+      </div>
       <div class="stat-tile">
         <span class="stat-number">{{ runs|length }}</span>
         <span class="stat-label">Plans cooked up</span>

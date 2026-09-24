@@ -441,3 +441,44 @@ s11## 2026-09-19 17:23:20
     states, tooltip text, reduced-motion behaviour, and that each form
     submits exactly once while showing the loading lines
 
+## 2026-09-25 00:30:11
+- **Message:** Add personality pass: new voice, oversized type, asymmetric layout, hover details, loading states
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/main.py
+  - backend/static/app.js
+  - backend/static/style.css
+  - backend/templates/_circle.html
+  - backend/templates/favorites.html
+  - backend/templates/group.html
+  - backend/templates/index.html
+  - backend/templates/join.html
+  - backend/templates/preferences.html
+  - backend/templates/respond.html
+  - backend/templates/vote.html
+
+## Commit: Put member count in an equal 3-tile stat row, share member form fields
+
+- Date: 2026-09-25
+- Time spent: ~15 minutes (measuring the reported alignment issues across
+  8 viewport widths and on the live site, fixing, re-verifying)
+- Rough tokens used: ~60,000-100,000 (rough estimate from conversation
+  length and tool-call volume; Claude Code doesn't expose an exact counter)
+- What shipped:
+  - Dashboard: moved the oversized "N in the gang" count back into the
+    stat row as a normal tile (same border/shadow/fill), removed the
+    `.dash-head`/`.mega-*` styles, and dropped the 24px stagger on the
+    second tile so the row is flat
+  - `.stat-row` now uses a fixed `repeat(3, 1fr)` grid from 640px up (one
+    column below) instead of `auto-fit`, so tiles are always equal width
+    and can't wrap into an uneven 2 + 1
+  - New `templates/_member_fields.html` macro holds the name/email,
+    location and interests/dislikes fields; index.html and join.html both
+    use it (with a name prefix) instead of duplicating the markup
+  - Checked, no change needed: field pairs were already a 1fr 1fr grid and
+    measured equal everywhere; HANG/OUT share one text-shadow rule
+  - Verified in headless Chromium: create-group and join still save every
+    field; tiles equal width and top at 1440-640px, stacked below; no
+    horizontal overflow
+
