@@ -940,6 +940,252 @@ button:active, .btn:active {
   color: var(--text-primary);
 }
 
+/* ---------- oversized statement type (used sparingly: hero word,
+   dashboard member count, confirmation check - nowhere else) ---------- */
+
+.hero-title { font-size: 2.2rem; }
+
+.mega-word {
+  display: block;
+  margin: 4px 0 10px;
+  font-size: clamp(5.5rem, 24vw, 10.5rem);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+  text-shadow: 6px 6px 0 var(--bg-coral);
+}
+
+.dash-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.dash-head .lede { margin-bottom: 12px; }
+
+.mega-stat {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mega-number {
+  font-family: var(--font-display-black);
+  font-size: clamp(7rem, 26vw, 13rem);
+  line-height: 0.78;
+  letter-spacing: -0.05em;
+  color: var(--bg-berry);
+  text-shadow: 6px 6px 0 var(--shadow-color);
+}
+
+.mega-label {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  max-width: 7ch;
+  line-height: 1.15;
+  padding-bottom: 6px;
+}
+
+.status-banner { position: relative; overflow: hidden; }
+.status-banner > :not(.mega-check) { position: relative; }
+
+/* the giant check replaces the small ✓ in the heading: it gets its own
+   row above it, left-aligned with the text */
+.status-banner:has(.mega-check) { text-align: left; padding-top: 20px; }
+.status-banner:has(.mega-check) .lede { margin-bottom: 0; }
+
+.mega-check {
+  display: block;
+  width: clamp(150px, 45vw, 210px);
+  height: auto;
+  margin: 0 0 4px -10px;
+  color: var(--text-on-fill);
+  pointer-events: none;
+}
+
+/* ---------- asymmetry (desktop only; one offset unit, --offset: 24px,
+   used for every deliberate break so it reads as a system) ---------- */
+
+:root { --offset: 24px; }
+
+@media (min-width: 860px) {
+  /* home: sign-up card drops one unit below the headline column and
+     hangs one unit into the gold band underneath */
+  .section-hero { position: relative; z-index: 1; }
+  .hero .hard-card {
+    position: relative;
+    align-self: end;
+    margin-bottom: calc(-56px - var(--border-width) - var(--offset));
+  }
+  .hero .hero-text { align-self: start; }
+  .section-hero + .section .section-inner { padding-top: calc(56px + var(--offset)); }
+
+  /* home: features step down in a stagger */
+  .feature-row { padding-bottom: var(--offset); }
+  .feature-item:nth-child(even) { transform: translateY(var(--offset)); }
+
+  /* dashboard: circle moves off-centre, status line sits beside it,
+     one unit lower than the frame's top */
+  .circle-hero {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: calc(var(--offset) * 2);
+    text-align: left;
+  }
+  .circle-hero .circle-status {
+    margin-top: var(--offset);
+    font-size: 1.15rem;
+    max-width: 26ch;
+  }
+
+  /* dashboard: second stat tile sits one unit lower */
+  .stat-row { padding-bottom: var(--offset); }
+  .stat-tile:nth-child(2) { transform: translateY(var(--offset)); }
+}
+
+@media (min-width: 640px) {
+  /* favorites / likes: heading hangs one unit left of the card edge,
+     explainer strip is indented one unit right */
+  .wrap-offset > h1 { margin-left: calc(var(--offset) * -1); }
+  .wrap-offset > .explainer { margin-left: var(--offset); }
+}
+
+/* ---------- hover & cursor personality (pointer devices only; all
+   motion off under prefers-reduced-motion). Uses the individual
+   rotate/translate properties so it stacks on top of any layout
+   transform (e.g. the 24px stat-tile offset) instead of replacing it. ---------- */
+
+.node-tip {
+  position: absolute;
+  z-index: 50;
+  transform: translate(-50%, -100%);
+  padding: 5px 10px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sharp);
+  box-shadow: var(--shadow-offset-sm) var(--shadow-offset-sm) 0 var(--shadow-color);
+  pointer-events: none;
+  opacity: 0;
+}
+.node-tip[data-status="in"] { background: var(--success); color: var(--text-on-fill); }
+.node-tip[data-status="out"] { background: var(--decline); color: var(--text-on-fill); }
+.node-tip[data-status="maybe"] { background: var(--bg-gold); }
+.node-tip.is-visible { opacity: 1; }
+
+@media (hover: hover) {
+  .circle-diagram {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%23FF7057' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") 8 8, crosshair;
+  }
+  .circle-node:hover .circle-node-fill { scale: 1.25; opacity: 1; }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .circle-node .circle-node-fill { transition: fill 0.15s ease, stroke 0.15s ease, opacity 0.15s ease, scale 0.15s ease; }
+  .node-tip.is-visible { animation: tipPop 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+  /* cards without a form in them tilt and lift (form cards stay still so
+     fields don't move while someone is typing); neighbours tilt opposite ways */
+  .card:not(:has(form)), .stat-tile, .run, .circle-frame, .feature-icon-box {
+    transition: rotate 0.15s ease, translate 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:not(:has(form)):hover, .stat-tile:hover, .run:hover, .circle-frame:hover, .feature-icon-box:hover {
+    rotate: 1deg;
+    translate: -2px -2px;
+    box-shadow: 6px 6px 0 var(--shadow-color);
+  }
+  .stat-tile:nth-child(even):hover, .card:not(:has(form)):nth-of-type(even):hover,
+  .run:nth-child(even):hover, .feature-item:nth-child(even) .feature-icon-box:hover { rotate: -1deg; }
+
+  button, .btn { transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease, rotate 0.12s ease, translate 0.12s ease; }
+  button:hover, .btn:hover {
+    rotate: -2deg;
+    translate: -1px -1px;
+    box-shadow: 5px 5px 0 var(--shadow-color);
+  }
+  button:active, .btn:active { rotate: 0deg; translate: 0 0; }
+
+  .nav-icon-box:hover { animation: iconWiggle 0.3s ease; }
+}
+
+@keyframes tipPop {
+  0% { opacity: 0; scale: 0.6; translate: 0 6px; }
+  100% { opacity: 1; scale: 1; translate: 0 0; }
+}
+
+@keyframes iconWiggle {
+  0%, 100% { rotate: 0deg; }
+  30% { rotate: -8deg; }
+  65% { rotate: 6deg; }
+}
+
+/* ---------- agent "thinking" state (plan + reply forms) ---------- */
+
+button.is-busy, button.is-busy:hover {
+  pointer-events: none;
+  background: var(--bg-gold);
+  rotate: 0deg;
+  translate: 0 0;
+  cursor: progress;
+}
+
+.agent-loader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sharp);
+  box-shadow: var(--shadow-offset-sm) var(--shadow-offset-sm) 0 var(--shadow-color);
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.agent-dots { display: inline-flex; gap: 4px; flex: none; }
+.agent-dots i {
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-coral);
+}
+.agent-dots i:nth-child(2) { background: var(--bg-gold); }
+.agent-dots i:nth-child(3) { background: var(--bg-berry); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .agent-dots i { animation: dotHop 0.9s ease-in-out infinite; }
+  .agent-dots i:nth-child(2) { animation-delay: 0.15s; }
+  .agent-dots i:nth-child(3) { animation-delay: 0.3s; }
+  .agent-line.is-new { animation: lineIn 0.22s ease-out both; }
+}
+
+@keyframes dotHop {
+  0%, 60%, 100% { translate: 0 0; }
+  30% { translate: 0 -6px; }
+}
+
+@keyframes lineIn {
+  0% { opacity: 0; translate: 0 6px; }
+  100% { opacity: 1; translate: 0 0; }
+}
+
 /* ---------- page-explainer icon strip ---------- */
 
 .explainer {

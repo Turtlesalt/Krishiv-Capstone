@@ -68,14 +68,14 @@ templates.env.globals["member_verdicts"] = _member_verdicts
 def _circle_summary(group: dict, verdicts: dict) -> str:
     total = len(group["members"])
     if total == 0:
-        return "No members yet."
+        return "It's just the ghosts in here. Share the invite link."
     responded = len(verdicts)
     pending = [m["name"] for m in group["members"] if m["name"] not in verdicts]
     if responded == 0:
-        return "Waiting on everyone to respond."
+        return "Plan's out. Now we wait for replies…"
     if pending:
-        return f"{responded} of {total} responded — waiting on {', '.join(pending)}."
-    return f"All {total} responded."
+        return f"{responded} of {total} are in. Still waiting on {', '.join(pending)} 👀"
+    return f"All {total} replied. Full house."
 
 
 def _flow_stage(group: dict) -> str:
@@ -96,7 +96,7 @@ def _latest_circle_state(group: dict) -> dict:
         return {
             "session_id": None,
             "verdicts": {},
-            "summary": "No plan yet — ask the agent to get started.",
+            "summary": "Nothing cooking yet. Say the word.",
             "stage": "gather",
         }
     latest = runs[-1]
@@ -112,13 +112,13 @@ def _latest_circle_state(group: dict) -> dict:
 def _friendly_agent_error(exc: Exception) -> str:
     if isinstance(exc, genai_errors.ClientError) and getattr(exc, "code", None) == 429:
         return (
-            "Gemini's free-tier request quota for this model is used up for now. "
-            "Wait a bit and try again, switch GEMINI_MODEL in .env to a model with "
-            "separate quota, or enable billing on the Google AI Studio project."
+            "The agent's out of juice for now (Gemini's free-tier limit). "
+            "Give it a few minutes and try again. (Setup tip: switch GEMINI_MODEL "
+            "in .env to a model with separate quota, or turn on billing.)"
         )
     if isinstance(exc, genai_errors.APIError):
-        return f"Gemini API error ({getattr(exc, 'code', '?')}): {exc}"
-    return f"The agent hit an unexpected error: {exc}"
+        return f"Well, that didn't work. Gemini said no ({getattr(exc, 'code', '?')}): {exc}. Try again?"
+    return f"Something broke on our end: {exc}. Try again?"
 
 
 @app.get("/health")
@@ -173,7 +173,7 @@ def create_group(
 def group_page(request: Request, group_id: str):
     group = groups.get_group(group_id)
     if group is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     join_url = str(request.base_url).rstrip("/") + f"/groups/{group_id}/join"
     return templates.TemplateResponse(
         request,
@@ -191,7 +191,7 @@ def group_page(request: Request, group_id: str):
 def join_page(request: Request, group_id: str):
     group = groups.get_group(group_id)
     if group is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     return templates.TemplateResponse(request, "join.html", {"group": group})
 
 
@@ -205,7 +205,7 @@ def join_group(
     dislikes: str = Form(""),
 ):
     if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     groups.add_member(group_id, name, email, location, interests, dislikes)
     return RedirectResponse(f"/groups/{group_id}", status_code=303)
 
@@ -214,7 +214,7 @@ def join_group(
 def preferences_page(request: Request, group_id: str, person: str = ""):
     group = groups.get_group(group_id)
     if group is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     if not group["members"]:
         raise HTTPException(status_code=400, detail="Group has no members yet")
     if not person or not any(m["name"] == person for m in group["members"]):
@@ -236,7 +236,7 @@ def update_preferences(
     dislikes: str = Form(""),
 ):
     if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     groups.update_member_preferences(group_id, name, interests, dislikes)
     return RedirectResponse(f"/groups/{group_id}/preferences?person={name}", status_code=303)
 
@@ -245,7 +245,7 @@ def update_preferences(
 def favorites_page(request: Request, group_id: str, person: str = ""):
     group = groups.get_group(group_id)
     if group is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     if not group["members"]:
         raise HTTPException(status_code=400, detail="Group has no members yet")
     if not person or not any(m["name"] == person for m in group["members"]):
@@ -272,7 +272,7 @@ def add_favorite(
     notes: str = Form(""),
 ):
     if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     groups.add_favorite(group_id, person, name, category, notes)
     return RedirectResponse(f"/groups/{group_id}/favorites?person={person}", status_code=303)
 
@@ -280,7 +280,7 @@ def add_favorite(
 @app.post("/groups/{group_id}/favorites/{favorite_id}/delete")
 def delete_favorite(group_id: str, favorite_id: str, person: str = Form(...)):
     if groups.get_group(group_id) is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     groups.remove_favorite(group_id, person, favorite_id)
     return RedirectResponse(f"/groups/{group_id}/favorites?person={person}", status_code=303)
 
@@ -364,7 +364,7 @@ def _error_page(request: Request, group_id: str, group: dict, error: str):
 def plan(request: Request, group_id: str, date: str = Form(...), note: str = Form("")):
     group = groups.get_group(group_id)
     if group is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     if not group["members"]:
         raise HTTPException(status_code=400, detail="Group has no members yet")
 
@@ -399,7 +399,7 @@ def plan(request: Request, group_id: str, date: str = Form(...), note: str = For
 def _reply(group_id: str, session_id: str, person: str, message: str) -> dict:
     group = groups.get_group(group_id)
     if group is None:
-        raise HTTPException(status_code=404, detail="Unknown group")
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
     session_path = groups.sessions_dir(group_id) / f"{session_id}.json"
     if not session_path.exists():
         raise HTTPException(status_code=404, detail="Unknown session_id")

@@ -5,8 +5,8 @@
   {% set pt = circle_point(loop.index0, members|length) %}
   {% set verdict = verdicts.get(m.name) %}
   {% set state = 'accepted' if verdict in ['accept', 'vote'] else ('declined' if verdict == 'decline' else ('tentative' if verdict == 'tentative' else 'idle')) %}
-  <g class="circle-node circle-node--{{ state }}" transform="translate({{ pt.x }} {{ pt.y }})">
-    <title>{{ m.name }}{% if verdict %} — {{ verdict }}{% else %} — waiting{% endif %}</title>
+  {% set status = {'accepted': 'in', 'declined': 'out', 'tentative': 'maybe', 'idle': 'waiting'}[state] %}
+  <g class="circle-node circle-node--{{ state }}" transform="translate({{ pt.x }} {{ pt.y }})" data-name="{{ m.name }}" data-status="{{ status }}" role="img" aria-label="{{ m.name }}: {{ status }}">
     <circle class="circle-node-fill" r="8"></circle>
     <text class="circle-node-label" text-anchor="middle" dy="2.6">{{ m.name[0]|upper }}</text>
   </g>
