@@ -35,4 +35,26 @@
     <button type="submit">Save preferences</button>
   </form>
 </div>
+<div class="card">
+  <div class="card-head">
+    <h2>Your calendar</h2>
+    <p class="caption">Read-only. The agent uses it to see when you're free and to spot assignments or exams you share with someone in the group. Only the people who share one ever hear about it.</p>
+  </div>
+  {% set notes = {
+    'connected': 'Connected. The agent can see your calendar now.',
+    'disconnected': 'Disconnected. The agent can no longer read your calendar.',
+    'denied': "Not connected: Google didn't grant calendar access.",
+    'expired': 'That connect link expired. Try again.',
+    'failed': "Couldn't finish connecting with Google. Try again.",
+  } %}
+  {% if calendar_status in notes %}<p class="calendar-note calendar-note--{{ 'ok' if calendar_status in ('connected', 'disconnected') else 'error' }}">{{ notes[calendar_status] }}</p>{% endif %}
+  {% if calendar_connected(member.email) %}
+  <form method="post" action="/groups/{{ group.id }}/calendar/disconnect">
+    <p class="calendar-status"><span class="chip">Connected</span> {{ member.email }}</p>
+    <button type="submit" class="btn-secondary">Disconnect</button>
+  </form>
+  {% else %}
+  <a class="btn" href="/groups/{{ group.id }}/calendar/connect">Connect Google Calendar</a>
+  {% endif %}
+</div>
 {% endblock %}

@@ -1291,3 +1291,22 @@ button.is-busy, button.is-busy:hover {
   60% { opacity: 1; scale: 1.15; }
   100% { opacity: 1; scale: 1; rotate: var(--tilt); }
 }
+
+/* ---------- study together + calendar connection ---------- */
+
+.check-work-form { margin-top: 0; }
+.check-work-note { margin-top: 12px; }
+
+.calendar-status { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+.calendar-note {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sharp);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.calendar-note--ok { background: var(--success); color: var(--text-on-fill); }
+.calendar-note--error { background: var(--decline); color: var(--text-on-fill); }
+
+a.btn { text-decoration: none; }

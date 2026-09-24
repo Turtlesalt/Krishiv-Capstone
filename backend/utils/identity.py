@@ -65,3 +65,30 @@ def create_signin_token(group_id: str, email: str) -> str:
 def redeem_signin_token(token: str, group: dict) -> dict | None:
     email = _read(token, "signin", group["id"])
     return find_member(group, email) if email else None
+
+
+# ---------- calendar connect (OAuth `state`) ----------
+# The Google round trip carries a signed state naming the group, member and
+# a one-time nonce. The nonce is also set as a cookie on the browser that
+# started the flow, so a connect link can't be finished in someone else's
+# browser (which would attach *their* calendar to this member).
+_CALENDAR_STATE_TTL_SECONDS = 15 * 60
+CALENDAR_NONCE_COOKIE = "sc_cal_nonce"
+
+
+def create_calendar_connect_state(group_id: str, email: str, nonce: str) -> str:
+    return sign_payload({
+        "kind": "calconnect", "group": group_id, "email": email.lower(), "nonce": nonce,
+        "exp": int(time.time()) + _CALENDAR_STATE_TTL_SECONDS,
+    })
+
+
+def read_calendar_connect_state(token: str) -> dict | None:
+    payload = verify_payload(token or "")
+    if payload is None or payload.get("kind") != "calconnect":
+        return None
+    if int(time.time()) > payload.get("exp", 0):
+        return None
+    if not all(isinstance(payload.get(k), str) for k in ("group", "email", "nonce")):
+        return None
+    return payload

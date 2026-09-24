@@ -549,3 +549,35 @@ s11## 2026-09-19 17:23:20
 - **Files changed:**
 
 
+## 2026-09-25 05:08:41
+- **Message:** Log previous commits in BUILD_LOG.md
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+
+## Commit: Add "Check for work": shared assignment/exam matching and study invites
+
+- Date: 2026-09-25
+- Time spent: ~1.5 hours (design + per-member calendar OAuth, matcher,
+  agent tool, privacy guards, UI, 36 + 24 + 5 checks, one live Gemini run)
+- Rough tokens used: ~400,000-700,000 (rough estimate; Claude Code doesn't
+  expose an exact counter)
+- What shipped:
+  - Members connect their own Google Calendar (read-only) from Preferences;
+    tokens stored per member under DATA_DIR/member_calendar_tokens. OAuth
+    state is signed and tied to the starting browser by a nonce cookie;
+    reuses the existing /oauth2callback redirect URI
+  - Free/busy now reads a member's own calendar once they've connected
+  - skills_impl/shared_work.py: deterministic matcher (course code or
+    shared distinctive words, compatible type/number, due within 48h) and
+    the agent's new find_shared_deadlines tool - unmatched items never
+    reach the agent
+  - "Study together" card with a Check for work button on the dashboard;
+    agent invites only the members of each match (accept/decline buttons)
+  - Privacy enforced in code: send_email refuses to name a match's item to
+    a non-member; the group-visible recap is replaced if it names one;
+    study runs don't count toward the circle's reply tally
+  - /oauth2/login locked once the app account is connected (needs
+    OAUTH_ADMIN_KEY to replace it); callback only finishes a login this
+    server started
+

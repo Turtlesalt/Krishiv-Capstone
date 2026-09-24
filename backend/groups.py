@@ -207,6 +207,50 @@ def get_known_places(group_id: str, session_id: str) -> list[dict]:
     return json.loads(path.read_text()).get(session_id, [])
 
 
+def study_matches_file(group_id: str) -> Path:
+    return _group_dir(group_id) / "study_matches.json"
+
+
+def save_study_matches(group_id: str, session_id: str, matches: list[dict]) -> None:
+    """The shared-deadline matches find_shared_deadlines found for one
+    "Check for work" run - the source of truth for who may be told about
+    which piece of work (see study_match_leak)."""
+    path = study_matches_file(group_id)
+    all_matches = json.loads(path.read_text()) if path.exists() else {}
+    all_matches[session_id] = matches
+    path.write_text(json.dumps(all_matches, indent=2))
+
+
+def get_study_matches(group_id: str, session_id: str) -> list[dict]:
+    path = study_matches_file(group_id)
+    if not path.exists():
+        return []
+    return json.loads(path.read_text()).get(session_id, [])
+
+
+def _match_titles(match: dict) -> set[str]:
+    return {t.strip().lower() for t in [match["title"], *match["titles_by_member"].values()] if t.strip()}
+
+
+def study_match_leak(group_id: str, session_id: str, recipient: str, text: str) -> str | None:
+    """Mechanical privacy check: if `text` names a matched assignment/exam,
+    `recipient` must be one of the members who actually has it. Returns the
+    leaked title, or None if the text is fine to send to them."""
+    lowered = text.lower()
+    for match in get_study_matches(group_id, session_id):
+        if recipient.lower() in {m.lower() for m in match["members"]}:
+            continue
+        for title in _match_titles(match):
+            if title in lowered:
+                return title
+    return None
+
+
+def mentions_study_item(group_id: str, session_id: str, text: str) -> bool:
+    lowered = text.lower()
+    return any(t in lowered for m in get_study_matches(group_id, session_id) for t in _match_titles(m))
+
+
 def is_text_grounded(group_id: str, session_id: str, text: str) -> bool:
     """Mechanical (non-LLM) check: any quoted, multi-word phrase in `text`
     - how the model tends to cite a specific name - must match a real
@@ -222,6 +266,8 @@ def is_text_grounded(group_id: str, session_id: str, text: str) -> bool:
     safe_terms = known_names | _SAFE_QUOTED_WORDS
     safe_terms |= {m["name"].strip().lower() for m in group["members"]}
     safe_terms.add(group["name"].strip().lower())
+    for match in get_study_matches(group_id, session_id):
+        safe_terms |= _match_titles(match)
 
     for phrase in _QUOTED_PHRASE_RE.findall(text):
         lowered = phrase.strip().lower()

@@ -1,0 +1,17 @@
+{
+  "name": "find_shared_deadlines",
+  "description": "For a 'Check for work' run: reads the connected calendars of every group member and returns assignments/exams that two or more members share (same piece of work, due within 48 hours of each other). Matching is already done for you - each match lists exactly which members have it. Also reports who hasn't connected their calendar. Never returns anyone's unmatched items.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "days_ahead": {
+        "type": "integer",
+        "description": "How many days ahead to look, 1-30. Default 14."
+      }
+    }
+  },
+  "implementation": {
+    "module": "skills_impl.shared_work",
+    "function": "find_shared_deadlines"
+  }
+}

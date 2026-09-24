@@ -42,6 +42,12 @@ const AGENT_LINES = {
     "Finding somewhere that isn't a chain\u2026",
     "Writing the group email so you don't have to\u2026",
   ],
+  work: [
+    "Reading everyone\u2019s calendars\u2026",
+    "Spotting shared deadlines\u2026",
+    "Finding a time you\u2019re all free\u2026",
+    "Sending study invites\u2026",
+  ],
   reply: [
     "Passing it along\u2026",
     "Re-thinking the plan\u2026",
@@ -55,7 +61,7 @@ function startAgentLoading(form, kind) {
   form.dataset.busy = "true";
   if (btn) {
     btn.dataset.label = btn.textContent;
-    btn.textContent = kind === "plan" ? "On it\u2026" : "Sending\u2026";
+    btn.textContent = kind === "reply" ? "Sending\u2026" : kind === "work" ? "Checking\u2026" : "On it\u2026";
     btn.classList.add("is-busy");
     btn.setAttribute("aria-disabled", "true");
   }
@@ -139,6 +145,13 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", (event) => {
       if (form.dataset.busy) { event.preventDefault(); return; }
       startAgentLoading(form, "plan");
+    });
+  });
+
+  document.querySelectorAll("form.check-work-form").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (form.dataset.busy) { event.preventDefault(); return; }
+      startAgentLoading(form, "work");
     });
   });
 

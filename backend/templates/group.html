@@ -105,6 +105,18 @@
       </form>
     </div>
 
+    {% set connected = namespace(n=0) %}{% for m in group.members if calendar_connected(m.email) %}{% set connected.n = connected.n + 1 %}{% endfor %}
+    <div class="card">
+      <div class="card-head">
+        <h2>Study together</h2>
+        <p class="caption">The agent looks for assignments and exams two or more of you share in the next two weeks, then invites just those people to work on it together.</p>
+      </div>
+      <form method="post" action="/groups/{{ group.id }}/check-work" class="check-work-form">
+        <button type="submit">Check for work</button>
+      </form>
+      <p class="caption check-work-note">{{ connected.n }} of {{ group.members|length }} calendars connected{% if connected.n < group.members|length %} &middot; the rest connect theirs on <a href="/groups/{{ group.id }}/preferences">Your Interests &amp; Dislikes</a>{% endif %}.</p>
+    </div>
+
     <section class="runs-section">
       <h2>Plans so far{% if runs %} <span class="badge-count">{{ runs|length }}</span>{% endif %}</h2>
       {% if runs %}

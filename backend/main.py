@@ -2,6 +2,7 @@ import html
 import json
 import math
 import os
+import secrets
 import uuid
 from pathlib import Path
 
@@ -50,6 +51,7 @@ def _script_version() -> str:
 
 templates.env.globals["style_version"] = _style_version
 templates.env.globals["script_version"] = _script_version
+templates.env.globals["calendar_connected"] = google_oauth.member_calendar_connected
 
 
 def _circle_point(index: int, total: int, cx: float = 50, cy: float = 50, r: float = 38) -> dict:
@@ -81,8 +83,12 @@ def _circle_summary(group: dict, verdicts: dict) -> str:
     return f"All {total} replied. Full house."
 
 
+def _plan_runs(group: dict) -> list:
+    return [r for r in group.get("runs", []) if r.get("kind") != "study"]
+
+
 def _flow_stage(group: dict) -> str:
-    runs = group.get("runs", [])
+    runs = _plan_runs(group)
     if not runs:
         return "gather"
     session_id = runs[-1]["session_id"]
@@ -94,7 +100,7 @@ def _flow_stage(group: dict) -> str:
 
 
 def _latest_circle_state(group: dict) -> dict:
-    runs = group.get("runs", [])
+    runs = _plan_runs(group)
     if not runs:
         return {
             "session_id": None,
@@ -130,7 +136,17 @@ def health():
 
 
 @app.get("/oauth2/login")
-def oauth2_login():
+def oauth2_login(key: str = ""):
+    # Connects the app's own Google account (sends the group email). Open for
+    # first-time setup; once connected, replacing it needs OAUTH_ADMIN_KEY so
+    # a stranger can't swap in their own account.
+    admin_key = os.getenv("OAUTH_ADMIN_KEY", "")
+    if google_oauth.TOKEN_FILE.exists() and not (admin_key and secrets.compare_digest(key, admin_key)):
+        raise HTTPException(
+            status_code=403,
+            detail="The app's Google account is already connected. To replace it, set OAUTH_ADMIN_KEY "
+            "and open /oauth2/login?key=<that value>.",
+        )
     flow = google_oauth.build_flow()
     auth_url, _state = flow.authorization_url(
         access_type="offline",
@@ -143,11 +159,15 @@ def oauth2_login():
 
 @app.get("/oauth2callback")
 def oauth2callback(request: Request):
+    connect = identity.read_calendar_connect_state(request.query_params.get("state", ""))
+    if connect is not None:
+        return _finish_calendar_connect(request, connect)
+    code_verifier = google_oauth.pop_pending_verifier()
+    if code_verifier is None:
+        # only finishes a login that /oauth2/login (and its key check) started
+        raise HTTPException(status_code=403, detail="No Google login in progress. Start from /oauth2/login.")
     flow = google_oauth.build_flow()
-    flow.fetch_token(
-        authorization_response=str(request.url),
-        code_verifier=google_oauth.pop_pending_verifier(),
-    )
+    flow.fetch_token(authorization_response=str(request.url), code_verifier=code_verifier)
     google_oauth.save_credentials(flow.credentials)
     return {"status": "Google account connected. You can close this tab and set MOCK_MODE=false."}
 
@@ -305,7 +325,12 @@ def preferences_page(request: Request, group_id: str):
     return templates.TemplateResponse(
         request,
         "preferences.html",
-        {"group": group, "person": member["name"], "member": member},
+        {
+            "group": group,
+            "person": member["name"],
+            "member": member,
+            "calendar_status": request.query_params.get("calendar", ""),
+        },
     )
 
 
@@ -322,6 +347,67 @@ def update_preferences(
         return _signin_redirect(group_id, "preferences")
     groups.update_member_preferences(group_id, member["name"], interests, dislikes)
     return RedirectResponse(f"/groups/{group_id}/preferences", status_code=303)
+
+
+@app.get("/groups/{group_id}/calendar/connect")
+def calendar_connect(request: Request, group_id: str):
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "preferences")
+    nonce = secrets.token_hex(16)
+    flow = google_oauth.build_flow(google_oauth.MEMBER_SCOPES)
+    auth_url, _state = flow.authorization_url(
+        access_type="offline",
+        prompt="consent",
+        login_hint=member["email"],
+        state=identity.create_calendar_connect_state(group_id, member["email"], nonce),
+    )
+    google_oauth.save_member_pending_verifier(nonce, flow.code_verifier)
+    response = RedirectResponse(auth_url, status_code=303)
+    response.set_cookie(
+        identity.CALENDAR_NONCE_COOKIE, nonce, max_age=15 * 60, path="/oauth2callback",
+        httponly=True, samesite="lax", secure=request.url.scheme == "https",
+    )
+    return response
+
+
+def _finish_calendar_connect(request: Request, connect: dict):
+    group_id = connect["group"]
+    back = f"/groups/{group_id}/preferences"
+    group = groups.get_group(group_id)
+    member = identity.find_member(group, connect["email"]) if group else None
+    if member is None:
+        raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
+    if not secrets.compare_digest(request.cookies.get(identity.CALENDAR_NONCE_COOKIE, ""), connect["nonce"]):
+        return RedirectResponse(f"{back}?calendar=expired", status_code=303)
+    code_verifier = google_oauth.pop_member_pending_verifier(connect["nonce"])
+    if request.query_params.get("error") or code_verifier is None:
+        status = "denied" if request.query_params.get("error") else "expired"
+        return RedirectResponse(f"{back}?calendar={status}", status_code=303)
+
+    flow = google_oauth.build_flow(google_oauth.MEMBER_SCOPES)
+    try:
+        flow.fetch_token(authorization_response=str(request.url), code_verifier=code_verifier)
+    except Exception:
+        return RedirectResponse(f"{back}?calendar=failed", status_code=303)
+    if google_oauth.MEMBER_SCOPES[0] not in (flow.credentials.scopes or []):
+        # they unticked calendar access on Google's consent screen
+        return RedirectResponse(f"{back}?calendar=denied", status_code=303)
+    google_oauth.save_member_credentials(member["email"], flow.credentials)
+    response = RedirectResponse(f"{back}?calendar=connected", status_code=303)
+    response.delete_cookie(identity.CALENDAR_NONCE_COOKIE, path="/oauth2callback")
+    return response
+
+
+@app.post("/groups/{group_id}/calendar/disconnect")
+def calendar_disconnect(request: Request, group_id: str):
+    group = _get_group_or_404(group_id)
+    member = identity.current_member(request, group)
+    if member is None:
+        return _signin_redirect(group_id, "preferences")
+    google_oauth.disconnect_member_calendar(member["email"])
+    return RedirectResponse(f"/groups/{group_id}/preferences?calendar=disconnected", status_code=303)
 
 
 @app.get("/groups/{group_id}/favorites", response_class=HTMLResponse)
@@ -454,7 +540,46 @@ def plan(request: Request, group_id: str, date: str = Form(...), note: str = For
     message = f"Plan something for the group for {date}."
     if note:
         message += f" Additional context from the organizer: {note}"
+    return _start_run(request, group, message, "plan")
 
+
+CHECK_WORK_MESSAGE = (
+    "Check for work: look through the group's connected calendars for assignments or exams that two or "
+    "more members share in the next 14 days, and invite each set of members to study for it together."
+)
+
+
+@app.post("/groups/{group_id}/check-work")
+def check_work(request: Request, group_id: str):
+    group = _get_group_or_404(group_id)
+    if len(group["members"]) < 2:
+        return _error_page(request, group_id, group, "You need at least two people in the group to find shared work.")
+    return _start_run(request, group, CHECK_WORK_MESSAGE, "study")
+
+
+def _safe_recap(final_text: str, group_id: str, session_id: str) -> str:
+    """The recap is shown to the whole group on the dashboard, so on top of
+    the usual grounding check it must not name a matched assignment/exam
+    (only the members who share it are told what it is)."""
+    if groups.get_study_matches(group_id, session_id):
+        if groups.mentions_study_item(group_id, session_id, final_text) or not groups.is_text_grounded(
+            group_id, session_id, final_text
+        ):
+            return _study_recap(group_id, session_id)
+        return final_text
+    if not _recap_is_grounded(final_text, group_id, session_id):
+        return _plain_recap(group_id, session_id)
+    return final_text
+
+
+def _study_recap(group_id: str, session_id: str) -> str:
+    matches = groups.get_study_matches(group_id, session_id)
+    pairs = "; ".join(" & ".join(m["members"]) for m in matches)
+    return f"Found {len(matches)} shared deadline{'s' if len(matches) != 1 else ''} ({pairs}). Check your email for study invites."
+
+
+def _start_run(request: Request, group: dict, message: str, kind: str):
+    group_id = group["id"]
     # Generated up front (rather than after the loop returns) so that
     # send_email - called mid-loop - can already read it via
     # agent_context.get_session_id() to build response-link tokens.
@@ -467,12 +592,10 @@ def plan(request: Request, group_id: str, date: str = Form(...), note: str = For
         return _error_page(request, group_id, group, _friendly_agent_error(exc))
 
     (groups.sessions_dir(group_id) / f"{session_id}.json").write_text(json.dumps(messages, indent=2))
-
-    if not _recap_is_grounded(final_text, group_id, session_id):
-        final_text = _plain_recap(group_id, session_id)
+    final_text = _safe_recap(final_text, group_id, session_id)
 
     group.setdefault("runs", []).append(
-        {"session_id": session_id, "request": message, "response": final_text}
+        {"session_id": session_id, "kind": kind, "request": message, "response": final_text}
     )
     groups.save_group(group)
 
@@ -493,9 +616,7 @@ def _reply(group_id: str, session_id: str, person: str, message: str) -> dict:
     injected = f"Reply from {person}: {message}"
     contents, final_text = agent_loop.run_resume(contents, injected)
     session_path.write_text(json.dumps(contents, indent=2))
-
-    if not _recap_is_grounded(final_text, group_id, session_id):
-        final_text = _plain_recap(group_id, session_id)
+    final_text = _safe_recap(final_text, group_id, session_id)
 
     for run in group.get("runs", []):
         if run["session_id"] == session_id:

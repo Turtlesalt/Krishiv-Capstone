@@ -126,6 +126,16 @@ def send_email(
             )
         }
 
+    leaked = groups.study_match_leak(group_id, session_id, member["name"], f"{subject}\n{body}")
+    if leaked:
+        return {
+            "error": (
+                f"Refusing to send: this email names '{leaked}', but {member['name']} isn't one of "
+                "the members who has it. Only email a shared assignment/exam to the members listed "
+                "in that match."
+            )
+        }
+
     plan_id = f"{group_id}:{session_id}"
     html_body = None
     if options:
