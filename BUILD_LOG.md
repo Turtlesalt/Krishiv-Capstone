@@ -523,3 +523,29 @@ s11## 2026-09-19 17:23:20
     columns; band sticker moved into normal flow so it can't overlap the
     hero card or the features
 
+## 2026-09-25 05:08:09
+- **Message:** Email-link sign-in for per-person pages, sticker accents, alignment and form fixes
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/main.py
+  - backend/skills_impl/email.py
+  - backend/static/app.js
+  - backend/static/style.css
+  - backend/templates/_stickers.html
+  - backend/templates/base.html
+  - backend/templates/favorites.html
+  - backend/templates/group.html
+  - backend/templates/index.html
+  - backend/templates/join.html
+  - backend/templates/preferences.html
+  - backend/templates/signin.html
+  - backend/utils/identity.py
+  - backend/utils/response_token.py
+
+## 2026-09-25 05:08:23
+- **Message:** Merge origin/main into assesment-2-krishiv
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+
+
