@@ -1,0 +1,23 @@
+{# The "about you" fields shared by the create-group and join forms. The two
+   routes name their fields differently (your_name vs name), hence prefix. #}
+{% macro member_fields(prefix='') %}
+<div class="form-row cols-2">
+  <label>Your name
+    <input type="text" name="{{ prefix }}name" required>
+  </label>
+  <label>Your email
+    <input type="email" name="{{ prefix }}email" required>
+  </label>
+</div>
+<label>Where are you based? (so we suggest places you can actually get to)
+  <input type="text" name="{{ prefix }}location" placeholder="e.g. Koramangala, Bangalore" required>
+</label>
+<div class="form-row cols-2">
+  <label>Things you're into (optional)
+    <textarea name="{{ prefix }}interests" rows="2" placeholder="e.g. hiking, board games, live music"></textarea>
+  </label>
+  <label>Hard passes (optional)
+    <textarea name="{{ prefix }}dislikes" rows="2" placeholder="e.g. loud bars, spicy food"></textarea>
+  </label>
+</div>
+{% endmacro %}

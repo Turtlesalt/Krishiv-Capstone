@@ -444,11 +444,17 @@ h3 {
 
 /* ---------- stat tiles (dashboard) ---------- */
 
+/* one column on phones, then exactly one equal column per tile - never
+   auto-fit, which can wrap 3 tiles into an uneven 2 + 1 */
 .stat-row {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 1fr;
   margin: 32px 0;
+}
+
+@media (min-width: 640px) {
+  .stat-row { grid-template-columns: repeat(3, 1fr); }
 }
 
 .stat-tile {
@@ -941,7 +947,7 @@ button:active, .btn:active {
 }
 
 /* ---------- oversized statement type (used sparingly: hero word,
-   dashboard member count, confirmation check - nowhere else) ---------- */
+   confirmation check - nowhere else) ---------- */
 
 .hero-title { font-size: 2.2rem; }
 
@@ -953,44 +959,6 @@ button:active, .btn:active {
   letter-spacing: -0.045em;
   color: var(--text-primary);
   text-shadow: 6px 6px 0 var(--bg-coral);
-}
-
-.dash-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.dash-head .lede { margin-bottom: 12px; }
-
-.mega-stat {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.mega-number {
-  font-family: var(--font-display-black);
-  font-size: clamp(7rem, 26vw, 13rem);
-  line-height: 0.78;
-  letter-spacing: -0.05em;
-  color: var(--bg-berry);
-  text-shadow: 6px 6px 0 var(--shadow-color);
-}
-
-.mega-label {
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-primary);
-  max-width: 7ch;
-  line-height: 1.15;
-  padding-bottom: 6px;
 }
 
 .status-banner { position: relative; overflow: hidden; }
@@ -1046,9 +1014,6 @@ button:active, .btn:active {
     max-width: 26ch;
   }
 
-  /* dashboard: second stat tile sits one unit lower */
-  .stat-row { padding-bottom: var(--offset); }
-  .stat-tile:nth-child(2) { transform: translateY(var(--offset)); }
 }
 
 @media (min-width: 640px) {
