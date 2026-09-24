@@ -99,7 +99,7 @@
     </div>
 
     <section class="runs-section">
-      <h2>Runs</h2>
+      <h2>Runs{% if runs %} <span class="badge-count">{{ runs|length }}</span>{% endif %}</h2>
       {% if runs %}
       <div class="runs-list">
         {% for run in runs|reverse %}

@@ -1,5 +1,5 @@
 from agent.context import get_group_id, get_session_id
-from groups import get_group, list_favorites, record_known_places
+from groups import favorite_category_matches, get_group, list_favorites, record_known_places
 
 
 def _matches_keyword(favorite: dict, keyword: str) -> bool:
@@ -12,12 +12,11 @@ def get_favorite_spots(category: str = "", keyword: str = "") -> dict:
     if get_group(group_id) is None:
         return {"error": "Unknown group"}
 
-    category = category.strip().lower()
     keyword = keyword.strip().lower()
 
     matches = list_favorites(group_id)
     if category:
-        matches = [f for f in matches if f["category"].lower() == category]
+        matches = [f for f in matches if favorite_category_matches(f["category"], category)]
     if keyword:
         matches = [f for f in matches if _matches_keyword(f, keyword)]
 

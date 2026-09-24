@@ -6,7 +6,7 @@ import time
 import requests
 
 from agent.context import get_group_id, get_session_id
-from groups import get_group, list_favorites, record_known_places
+from groups import favorite_category_matches, get_group, list_favorites, record_known_places
 from skills_impl.geocoding import geocode
 
 # Free, keyless OpenStreetMap services - no Google billing account needed.
@@ -195,11 +195,10 @@ def _collect_relevant_favorites(members: list[str] | None, category: str, keywor
     names = members or [m["name"] for m in group["members"]]
     favorites = [f for f in list_favorites(group_id) if f["person"] in names]
 
-    category = category.strip().lower()
     keyword = keyword.strip().lower()
     matches = []
     for f in favorites:
-        if category and f["category"].lower() not in (category, category.rstrip("s")):
+        if not favorite_category_matches(f["category"], category):
             continue
         haystack = f"{f['name']} {f.get('notes', '')}".lower()
         if keyword and keyword not in haystack:
@@ -283,9 +282,20 @@ def find_nearby_places(
 
     by_name: dict[str, dict] = {}
     used_radius_m = _RADIUS_STEPS_M[0]
+    # A live Overpass timeout/error shouldn't wipe out the favorites/preference
+    # matching already done above - caught here (not left to propagate up to
+    # dispatch_tool's generic {"error": ...}) so a transient network blip
+    # degrades to "your favorites and preference matches only" instead of a
+    # bare error that forces the model into ever-more-generic retries.
+    search_failed = False
     for radius_m in _RADIUS_STEPS_M:
         pool_size = max_results * pool_multiplier
-        for place in _overpass_search(lat, lon, location, category, keyword, radius_m, pool_size):
+        try:
+            found = _overpass_search(lat, lon, location, category, keyword, radius_m, pool_size)
+        except requests.RequestException:
+            search_failed = True
+            break
+        for place in found:
             key = place["name"].strip().lower()
             if key not in by_name:
                 by_name[key] = place
@@ -300,6 +310,14 @@ def find_nearby_places(
     _attach_distance_notes(ranked, _RADIUS_STEPS_M[0] / 1000)
     places = ranked[:max_results]
 
+    if search_failed and not places:
+        return {
+            "error": (
+                "Live places search timed out, and no saved favorite or preference match was "
+                "available to fall back on. Try again shortly, or a different location/keyword."
+            )
+        }
+
     if not places:
         return {
             "query": query,
@@ -312,12 +330,20 @@ def find_nearby_places(
             ),
         }
 
-    result = {"query": query, "places": places, "search_radius_km": used_radius_m / 1000}
-    if used_radius_m != _RADIUS_STEPS_M[0]:
+    result = {"query": query, "places": places}
+    if search_failed:
         result["note"] = (
-            f"Widened the search to {used_radius_m / 1000:.0f}km to find enough options - "
-            "some of these are a real drive away, not walking distance."
+            "Live places search timed out partway through; showing your saved favorites and "
+            "preference matches only - say so plainly, there may be more real venues nearby "
+            "this couldn't check."
         )
+    else:
+        result["search_radius_km"] = used_radius_m / 1000
+        if used_radius_m != _RADIUS_STEPS_M[0]:
+            result["note"] = (
+                f"Widened the search to {used_radius_m / 1000:.0f}km to find enough options - "
+                "some of these are a real drive away, not walking distance."
+            )
     record_known_places(get_group_id(), get_session_id(), places)
     return result
 
