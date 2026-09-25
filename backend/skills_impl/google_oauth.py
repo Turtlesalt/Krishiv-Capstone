@@ -24,9 +24,23 @@ SCOPES = [
 ]
 
 
-def redirect_uri() -> str:
-    port = os.getenv("PORT", "8000")
-    return os.getenv("GOOGLE_OAUTH_REDIRECT_URI", f"http://localhost:{port}/oauth2callback")
+def redirect_uri(base_url: str | None = None) -> str:
+    """Where Google sends people back to. An explicit GOOGLE_OAUTH_REDIRECT_URI
+    wins; otherwise it's built from the address the site is actually being
+    visited on (base_url), so a missing setting can't bounce people to
+    localhost. Whatever it resolves to must be listed under "Authorized
+    redirect URIs" for the OAuth client in Google Cloud Console."""
+    explicit = os.getenv("GOOGLE_OAUTH_REDIRECT_URI")
+    if explicit:
+        return explicit
+    if base_url:
+        return f"{base_url.rstrip('/')}/oauth2callback"
+    fallback = os.getenv("APP_BASE_URL", f"http://localhost:{os.getenv('PORT', '8000')}")
+    return f"{fallback.rstrip('/')}/oauth2callback"
+
+
+def is_configured() -> bool:
+    return bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
 
 
 # Per-member connections ask for calendar.readonly only, but Google hands
@@ -34,22 +48,25 @@ def redirect_uri() -> str:
 # the app owner connects their own calendar too) - don't treat that as an error.
 os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
-MEMBER_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly"
+# openid + email: the same Google step that connects someone's calendar also
+# tells us, verified by Google, which email they are - so it doubles as sign-in
+MEMBER_SCOPES = ["openid", "https://www.googleapis.com/auth/userinfo.email", CALENDAR_SCOPE]
 MEMBER_TOKENS_DIR = DATA_DIR / "member_calendar_tokens"
 MEMBER_PENDING_DIR = DATA_DIR / ".oauth_pending_members"
 
 
-def build_flow(scopes: list[str] = SCOPES) -> Flow:
+def build_flow(scopes: list[str] = SCOPES, base_url: str | None = None) -> Flow:
     client_config = {
         "web": {
             "client_id": os.environ["GOOGLE_CLIENT_ID"],
             "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [redirect_uri()],
+            "redirect_uris": [redirect_uri(base_url)],
         }
     }
-    return Flow.from_client_config(client_config, scopes=scopes, redirect_uri=redirect_uri())
+    return Flow.from_client_config(client_config, scopes=scopes, redirect_uri=redirect_uri(base_url))
 
 
 def save_pending_verifier(code_verifier: str) -> None:
@@ -139,3 +156,20 @@ def get_member_credentials(email: str) -> Credentials | None:
             return None
         save_member_credentials(email, creds)
     return creds
+
+
+def verified_google_email(creds: Credentials) -> str | None:
+    """The Google account's email from the signed ID token, if Google has
+    verified it - never trusted from anything the browser sent."""
+    from google.oauth2 import id_token
+
+    raw = getattr(creds, "id_token", None)
+    if not raw:
+        return None
+    try:
+        claims = id_token.verify_oauth2_token(raw, Request(), os.environ["GOOGLE_CLIENT_ID"])
+    except ValueError:
+        return None
+    if not claims.get("email_verified"):
+        return None
+    return claims.get("email", "").strip().lower() or None

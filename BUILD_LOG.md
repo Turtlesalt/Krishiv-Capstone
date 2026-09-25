@@ -581,3 +581,87 @@ s11## 2026-09-19 17:23:20
     OAUTH_ADMIN_KEY to replace it); callback only finishes a login this
     server started
 
+## 2026-09-25 05:29:10
+- **Message:** Add "Check for work": shared assignment/exam matching and study invites
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/.env.example
+  - backend/agent/agent.json
+  - backend/agent/skills/find_shared_deadlines.json
+  - backend/groups.py
+  - backend/main.py
+  - backend/skills_impl/calendar_skill.py
+  - backend/skills_impl/email.py
+  - backend/skills_impl/google_oauth.py
+  - backend/skills_impl/shared_work.py
+  - backend/static/app.js
+  - backend/static/style.css
+  - backend/templates/group.html
+  - backend/templates/preferences.html
+  - backend/utils/identity.py
+
+## Project total (as of 2026-09-25, through commit c69d180)
+
+- Total time spent: ~13-14 hours (780-840 minutes)
+- Total rough tokens used: ~2.4-4.4 million
+- How this was worked out: the sum of every "Time spent" and "Rough tokens
+  used" line in the "## Commit:" entries above. Ranges add up low-to-low
+  and high-to-high. Both totals are estimates, because Claude Code doesn't
+  expose an exact token counter.
+- Not included: the two 2026-09-11 planning commits recorded tokens as
+  "~[X]" (never filled in), so their tokens are missing from the total;
+  their 45 minutes each are counted. Commits with only an auto-generated
+  timestamp entry (e.g. 2026-09-17 "save commit") have no time or token
+  figures, so any time spent on those isn't counted either.
+- Breakdown:
+
+  | Commit | Time | Tokens |
+  |---|---|---|
+  | Add capstone plan and build log | 45 min | not recorded |
+  | Finalize capstone plan and build log | 45 min | not recorded |
+  | Build the hangout-planner agent, web app, location-aware planning | 2 h 35 min | 150k-300k |
+  | Fix personalization bugs, theme toggle, UI colors | 3-4 h | 350k-550k |
+  | Log previous commit and merge into main | 5 min | 40k-60k |
+  | Align theme toggle, keep theme across pages | 15 min | 80k-120k |
+  | Personality pass | 50 min | 300k-600k |
+  | Equal 3-tile stat row, shared member form fields | 15 min | 60k-100k |
+  | Email-link sign-in, stickers, alignment and form fixes | 3 h | 1M-2M |
+  | "Check for work" shared deadlines and study invites | 1.5 h | 400k-700k |
+  | **Total** | **~13-14 h** | **~2.4M-4.4M** |
+
+## Commit: Sign in with Google on join, and keep every login link on the live site
+
+- Date: 2026-09-25
+- Time spent: ~45 minutes (tracing the localhost fallbacks, Google sign-in
+  flow, 25 new checks + re-running the 65 existing ones)
+- Rough tokens used: ~200,000-350,000 (rough estimate; Claude Code doesn't
+  expose an exact counter)
+- What shipped:
+  - Creating or joining a group signs you in and goes straight to Google to
+    connect your calendar, then lands back on the dashboard with a note
+    saying whether it worked (skipping it still leaves you signed in)
+  - Sign-in page leads with "Continue with Google": Google's verified email
+    (signed ID token) says which member you are, so there's no email link
+    to chase; the email link stays as a fallback
+  - One Google step now does both identity and calendar (openid + email +
+    calendar.readonly); the Google account must match the email you joined
+    with, or the calendar isn't linked
+  - Sign-in email links and the Google redirect are built from the address
+    the site is actually visited on (Railway's forwarded host/proto) instead
+    of falling back to localhost when APP_BASE_URL / GOOGLE_OAUTH_REDIRECT_URI
+    aren't set
+
+## 2026-09-25 13:24:47
+- **Message:** Sign in with Google on join, and keep every login link on the live site
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/main.py
+  - backend/skills_impl/google_oauth.py
+  - backend/static/style.css
+  - backend/templates/group.html
+  - backend/templates/preferences.html
+  - backend/templates/signin.html
+  - backend/utils/identity.py
+

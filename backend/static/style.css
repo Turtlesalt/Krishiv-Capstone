@@ -1310,3 +1310,7 @@ button.is-busy, button.is-busy:hover {
 .calendar-note--error { background: var(--decline); color: var(--text-on-fill); }
 
 a.btn { text-decoration: none; }
+
+.signin-fallback { margin-top: 18px; }
+.signin-fallback summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
+.signin-fallback form { margin-top: 14px; }

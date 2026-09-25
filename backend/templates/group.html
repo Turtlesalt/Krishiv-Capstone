@@ -13,6 +13,16 @@
     <p class="error">{{ error }}</p>
     {% endif %}
 
+    {% set cal_notes = {
+      'connected': ('ok', "You're in, and your calendar's connected."),
+      'nocalendar': ('error', "You're in. Calendar access wasn't granted, so the agent can't see when you're free. Connect it any time from Your Interests & Dislikes."),
+      'denied': ('error', "You're in. You skipped connecting your calendar, so the agent can't see when you're free. Connect it any time from Your Interests & Dislikes."),
+      'mismatch': ('error', "You're in, but you picked a different Google account from the email you joined with, so your calendar isn't connected. Connect the matching account from Your Interests & Dislikes."),
+      'expired': ('error', "You're in, but connecting your calendar didn't finish. Try again from Your Interests & Dislikes."),
+      'failed': ('error', "You're in, but connecting your calendar didn't finish. Try again from Your Interests & Dislikes."),
+    } %}
+    {% if calendar_status in cal_notes %}<p class="calendar-note calendar-note--{{ cal_notes[calendar_status][0] }}">{{ cal_notes[calendar_status][1] }}</p>{% endif %}
+
     <div class="circle-hero">
       <div class="circle-frame">
         {{ circle_diagram(group.members, circle_state.verdicts) }}

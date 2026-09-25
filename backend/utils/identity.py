@@ -67,28 +67,35 @@ def redeem_signin_token(token: str, group: dict) -> dict | None:
     return find_member(group, email) if email else None
 
 
-# ---------- calendar connect (OAuth `state`) ----------
-# The Google round trip carries a signed state naming the group, member and
-# a one-time nonce. The nonce is also set as a cookie on the browser that
-# started the flow, so a connect link can't be finished in someone else's
-# browser (which would attach *their* calendar to this member).
-_CALENDAR_STATE_TTL_SECONDS = 15 * 60
+# ---------- Google sign-in / calendar connect (OAuth `state`) ----------
+# The Google round trip carries a signed state naming the group, why we went
+# to Google (purpose), who we expect (email - absent for a plain sign-in),
+# where to land afterwards, and a one-time nonce. The nonce is also set as a
+# cookie on the browser that started the flow, so a Google link can't be
+# finished in someone else's browser.
+#   purpose "join":    just created/joined the group - connect their calendar
+#   purpose "signin":  unknown device - Google's verified email says who it is
+#   purpose "connect": already signed in, connecting from Preferences
+_GOOGLE_STATE_TTL_SECONDS = 15 * 60
 CALENDAR_NONCE_COOKIE = "sc_cal_nonce"
+GOOGLE_PURPOSES = {"join", "signin", "connect"}
 
 
-def create_calendar_connect_state(group_id: str, email: str, nonce: str) -> str:
+def create_google_state(group_id: str, nonce: str, purpose: str, email: str = "", next_page: str = "") -> str:
+    assert purpose in GOOGLE_PURPOSES
     return sign_payload({
-        "kind": "calconnect", "group": group_id, "email": email.lower(), "nonce": nonce,
-        "exp": int(time.time()) + _CALENDAR_STATE_TTL_SECONDS,
+        "kind": "google", "group": group_id, "nonce": nonce, "purpose": purpose,
+        "email": email.lower(), "next": next_page,
+        "exp": int(time.time()) + _GOOGLE_STATE_TTL_SECONDS,
     })
 
 
-def read_calendar_connect_state(token: str) -> dict | None:
+def read_google_state(token: str) -> dict | None:
     payload = verify_payload(token or "")
-    if payload is None or payload.get("kind") != "calconnect":
+    if payload is None or payload.get("kind") != "google":
         return None
-    if int(time.time()) > payload.get("exp", 0):
+    if int(time.time()) > payload.get("exp", 0) or payload.get("purpose") not in GOOGLE_PURPOSES:
         return None
-    if not all(isinstance(payload.get(k), str) for k in ("group", "email", "nonce")):
+    if not all(isinstance(payload.get(k), str) for k in ("group", "nonce", "email", "next")):
         return None
     return payload
