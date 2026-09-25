@@ -652,3 +652,16 @@ s11## 2026-09-19 17:23:20
     of falling back to localhost when APP_BASE_URL / GOOGLE_OAUTH_REDIRECT_URI
     aren't set
 
+## 2026-09-25 13:24:47
+- **Message:** Sign in with Google on join, and keep every login link on the live site
+- **Author:** Krishiv Vijayakumar
+- **Files changed:**
+  - BUILD_LOG.md
+  - backend/main.py
+  - backend/skills_impl/google_oauth.py
+  - backend/static/style.css
+  - backend/templates/group.html
+  - backend/templates/preferences.html
+  - backend/templates/signin.html
+  - backend/utils/identity.py
+
