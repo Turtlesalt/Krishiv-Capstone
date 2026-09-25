@@ -136,7 +136,7 @@ def health():
 
 
 @app.get("/oauth2/login")
-def oauth2_login(key: str = ""):
+def oauth2_login(request: Request, key: str = ""):
     # Connects the app's own Google account (sends the group email). Open for
     # first-time setup; once connected, replacing it needs OAUTH_ADMIN_KEY so
     # a stranger can't swap in their own account.
@@ -147,7 +147,7 @@ def oauth2_login(key: str = ""):
             detail="The app's Google account is already connected. To replace it, set OAUTH_ADMIN_KEY "
             "and open /oauth2/login?key=<that value>.",
         )
-    flow = google_oauth.build_flow()
+    flow = google_oauth.build_flow(base_url=_public_base_url(request))
     auth_url, _state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
@@ -159,14 +159,14 @@ def oauth2_login(key: str = ""):
 
 @app.get("/oauth2callback")
 def oauth2callback(request: Request):
-    connect = identity.read_calendar_connect_state(request.query_params.get("state", ""))
-    if connect is not None:
-        return _finish_calendar_connect(request, connect)
+    google_state = identity.read_google_state(request.query_params.get("state", ""))
+    if google_state is not None:
+        return _finish_google(request, google_state)
     code_verifier = google_oauth.pop_pending_verifier()
     if code_verifier is None:
         # only finishes a login that /oauth2/login (and its key check) started
         raise HTTPException(status_code=403, detail="No Google login in progress. Start from /oauth2/login.")
-    flow = google_oauth.build_flow()
+    flow = google_oauth.build_flow(base_url=_public_base_url(request))
     flow.fetch_token(authorization_response=str(request.url), code_verifier=code_verifier)
     google_oauth.save_credentials(flow.credentials)
     return {"status": "Google account connected. You can close this tab and set MOCK_MODE=false."}
@@ -175,6 +175,16 @@ def oauth2callback(request: Request):
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
+
+
+def _public_base_url(request: Request) -> str:
+    """The address people are actually using (e.g. the Railway URL), taken
+    from the request itself - behind Railway's proxy that's the forwarded
+    host/proto. Used for links we hand out, so they can't point at localhost
+    just because APP_BASE_URL wasn't set."""
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme).split(",")[0].strip()
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    return f"{proto}://{host.split(',')[0].strip()}"
 
 
 def _get_group_or_404(group_id: str) -> dict:
@@ -196,8 +206,8 @@ def _signin_redirect(group_id: str, next_page: str) -> RedirectResponse:
     return RedirectResponse(f"/groups/{group_id}/signin?next={next_page}", status_code=303)
 
 
-def _send_signin_link(group: dict, member: dict, next_page: str) -> None:
-    base_url = os.getenv("APP_BASE_URL", f"http://localhost:{os.getenv('PORT', '8000')}").rstrip("/")
+def _send_signin_link(request: Request, group: dict, member: dict, next_page: str) -> None:
+    base_url = _public_base_url(request)
     token = identity.create_signin_token(group["id"], member["email"])
     link = f"{base_url}/groups/{group['id']}/signin/verify?token={token}&next={next_page}"
     body = (
@@ -236,9 +246,7 @@ def create_group(
     group = groups.create_group(
         group_name, your_name, your_email, your_location, your_interests, your_dislikes
     )
-    response = RedirectResponse(f"/groups/{group['id']}", status_code=303)
-    identity.remember_member(request, response, group["id"], your_email)
-    return response
+    return _welcome(request, group["id"], your_email)
 
 
 @app.get("/groups/{group_id}", response_class=HTMLResponse)
@@ -253,6 +261,7 @@ def group_page(request: Request, group_id: str):
             "join_url": join_url,
             "runs": group.get("runs", []),
             "circle_state": _latest_circle_state(group),
+            "calendar_status": request.query_params.get("calendar", ""),
         },
     )
 
@@ -279,7 +288,17 @@ def join_group(
         # sign you in as them, so they go through the emailed link instead.
         return _signin_redirect(group_id, "")
     groups.add_member(group_id, name, email, location, interests, dislikes)
-    response = RedirectResponse(f"/groups/{group_id}", status_code=303)
+    return _welcome(request, group_id, email)
+
+
+def _welcome(request: Request, group_id: str, email: str):
+    """Right after creating/joining: they're signed in on this device, and
+    go straight to Google to connect their calendar, landing back on the
+    dashboard. If Google isn't set up, straight to the dashboard."""
+    if google_oauth.is_configured():
+        response = _start_google(request, group_id, "join", email=email)
+    else:
+        response = RedirectResponse(f"/groups/{group_id}", status_code=303)
     identity.remember_member(request, response, group_id, email)
     return response
 
@@ -295,7 +314,7 @@ def send_signin(request: Request, group_id: str, email: str = Form(...), next: s
     member = identity.find_member(group, email.strip())
     if member is not None:
         try:
-            _send_signin_link(group, member, _safe_next(next))
+            _send_signin_link(request, group, member, _safe_next(next))
         except Exception as exc:
             return _signin_page(request, group, _safe_next(next),
                                 error=f"Couldn't send the email ({exc}). Is Gmail connected? Try again in a bit.")
@@ -355,47 +374,89 @@ def calendar_connect(request: Request, group_id: str):
     member = identity.current_member(request, group)
     if member is None:
         return _signin_redirect(group_id, "preferences")
+    return _start_google(request, group_id, "connect", email=member["email"], next_page="preferences")
+
+
+@app.get("/groups/{group_id}/signin/google")
+def signin_google(request: Request, group_id: str, next: str = ""):
+    _get_group_or_404(group_id)
+    return _start_google(request, group_id, "signin", next_page=_safe_next(next))
+
+
+def _start_google(request: Request, group_id: str, purpose: str, email: str = "", next_page: str = ""):
     nonce = secrets.token_hex(16)
-    flow = google_oauth.build_flow(google_oauth.MEMBER_SCOPES)
+    flow = google_oauth.build_flow(google_oauth.MEMBER_SCOPES, base_url=_public_base_url(request))
+    params = {"access_type": "offline", "prompt": "consent"}
+    if email:
+        params["login_hint"] = email
     auth_url, _state = flow.authorization_url(
-        access_type="offline",
-        prompt="consent",
-        login_hint=member["email"],
-        state=identity.create_calendar_connect_state(group_id, member["email"], nonce),
+        state=identity.create_google_state(group_id, nonce, purpose, email=email, next_page=next_page), **params
     )
     google_oauth.save_member_pending_verifier(nonce, flow.code_verifier)
     response = RedirectResponse(auth_url, status_code=303)
     response.set_cookie(
         identity.CALENDAR_NONCE_COOKIE, nonce, max_age=15 * 60, path="/oauth2callback",
-        httponly=True, samesite="lax", secure=request.url.scheme == "https",
+        httponly=True, samesite="lax", secure=_public_base_url(request).startswith("https"),
     )
     return response
 
 
-def _finish_calendar_connect(request: Request, connect: dict):
-    group_id = connect["group"]
-    back = f"/groups/{group_id}/preferences"
+def _finish_google(request: Request, state: dict):
+    group_id, purpose = state["group"], state["purpose"]
     group = groups.get_group(group_id)
-    member = identity.find_member(group, connect["email"]) if group else None
-    if member is None:
+    if group is None:
         raise HTTPException(status_code=404, detail="Can't find that group. Check the link?")
-    if not secrets.compare_digest(request.cookies.get(identity.CALENDAR_NONCE_COOKIE, ""), connect["nonce"]):
-        return RedirectResponse(f"{back}?calendar=expired", status_code=303)
-    code_verifier = google_oauth.pop_member_pending_verifier(connect["nonce"])
-    if request.query_params.get("error") or code_verifier is None:
-        status = "denied" if request.query_params.get("error") else "expired"
-        return RedirectResponse(f"{back}?calendar={status}", status_code=303)
+    next_page = _safe_next(state["next"])
+    # joining lands on the dashboard; connecting from Preferences goes back there
+    landing = f"/groups/{group_id}/{next_page}".rstrip("/")
 
-    flow = google_oauth.build_flow(google_oauth.MEMBER_SCOPES)
+    def back(status: str):
+        if purpose == "signin":
+            messages = {
+                "denied": "Google sign-in was cancelled. Try again, or get an email link instead.",
+                "expired": "That sign-in took too long or was opened in another browser. Try again.",
+                "failed": "Couldn't finish signing in with Google. Try again, or get an email link instead.",
+                "nomember": "That Google account isn't in this group. Sign in with the email you joined with, or join the group.",
+            }
+            return _signin_page(request, group, next_page, error=messages[status], status_code=400)
+        return RedirectResponse(f"{landing}?calendar={status}", status_code=303)
+
+    if not secrets.compare_digest(request.cookies.get(identity.CALENDAR_NONCE_COOKIE, ""), state["nonce"]):
+        return back("expired")
+    code_verifier = google_oauth.pop_member_pending_verifier(state["nonce"])
+    if request.query_params.get("error") or code_verifier is None:
+        return back("denied" if request.query_params.get("error") else "expired")
+
+    flow = google_oauth.build_flow(google_oauth.MEMBER_SCOPES, base_url=_public_base_url(request))
     try:
         flow.fetch_token(authorization_response=str(request.url), code_verifier=code_verifier)
     except Exception:
-        return RedirectResponse(f"{back}?calendar=failed", status_code=303)
-    if google_oauth.MEMBER_SCOPES[0] not in (flow.credentials.scopes or []):
-        # they unticked calendar access on Google's consent screen
-        return RedirectResponse(f"{back}?calendar=denied", status_code=303)
-    google_oauth.save_member_credentials(member["email"], flow.credentials)
-    response = RedirectResponse(f"{back}?calendar=connected", status_code=303)
+        return back("failed")
+    google_email = google_oauth.verified_google_email(flow.credentials)
+    if google_email is None:
+        return back("failed")
+
+    if purpose == "signin":
+        member = identity.find_member(group, google_email)
+        if member is None:
+            return back("nomember")
+    else:
+        member = identity.find_member(group, state["email"])
+        if member is None:
+            raise HTTPException(status_code=404, detail="You're not in this group any more.")
+        if google_email != member["email"].lower():
+            # their calendar is on a different Google account than the email they joined with
+            return back("mismatch")
+
+    status = "connected"
+    if google_oauth.CALENDAR_SCOPE in (flow.credentials.scopes or []):
+        google_oauth.save_member_credentials(member["email"], flow.credentials)
+    else:
+        status = "nocalendar"  # signed in, but they unticked calendar access
+    response = RedirectResponse(
+        landing if purpose == "signin" and status == "connected" else f"{landing}?calendar={status}", status_code=303
+    )
+    identity.remember_member(request, response, group_id, member["email"])
     response.delete_cookie(identity.CALENDAR_NONCE_COOKIE, path="/oauth2callback")
     return response
 

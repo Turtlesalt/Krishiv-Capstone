@@ -3,7 +3,7 @@
 {% block wrap_class %}wrap-narrow{% endblock %}
 {% block content %}
 <h1>Who's this?</h1>
-<p class="lede">This device doesn't know you in "{{ group.name }}" yet. We'll email you a link that signs you in.</p>
+<p class="lede">This device doesn't know you in "{{ group.name }}" yet. Sign in with the Google account you joined with and you'll land right back here.</p>
 
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
@@ -15,13 +15,17 @@
     <p class="caption">If that email is in this group, a sign-in link is on its way. It works for 30 minutes.</p>
   </div>
   {% else %}
-  <form method="post" action="/groups/{{ group.id }}/signin">
-    <input type="hidden" name="next" value="{{ next }}">
-    <label>The email you joined with
-      <input type="email" name="email" required autocomplete="email">
-    </label>
-    <button type="submit">Email me a link</button>
-  </form>
+  <a class="btn" href="/groups/{{ group.id }}/signin/google{% if next %}?next={{ next }}{% endif %}">Continue with Google</a>
+  <details class="signin-fallback">
+    <summary>No Google account? Get a sign-in link by email</summary>
+    <form method="post" action="/groups/{{ group.id }}/signin">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label>The email you joined with
+        <input type="email" name="email" required autocomplete="email">
+      </label>
+      <button type="submit">Email me a link</button>
+    </form>
+  </details>
   {% endif %}
 </div>
 

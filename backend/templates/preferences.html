@@ -46,6 +46,8 @@
     'denied': "Not connected: Google didn't grant calendar access.",
     'expired': 'That connect link expired. Try again.',
     'failed': "Couldn't finish connecting with Google. Try again.",
+    'nocalendar': "Not connected: calendar access wasn't ticked on Google's screen.",
+    'mismatch': "Not connected: that Google account doesn't match the email you joined with. Pick the matching account.",
   } %}
   {% if calendar_status in notes %}<p class="calendar-note calendar-note--{{ 'ok' if calendar_status in ('connected', 'disconnected') else 'error' }}">{{ notes[calendar_status] }}</p>{% endif %}
   {% if calendar_connected(member.email) %}
